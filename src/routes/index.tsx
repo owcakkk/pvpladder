@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Rankings } from "@/components/ladder/Rankings";
 
 export const Route = createFileRoute("/")({
-  validateSearch: (s: Record<string, unknown>): { q?: string } =>
+  validateSearch: (s: Record<string, unknown>): { q?: string | undefined } =>
     typeof s["q"] === "string" && s["q"] ? { q: s["q"] } : {},
   head: () => ({
     meta: [

@@ -18,7 +18,7 @@ export function Avatar({ p, className }: { p: { username: string; mc_uuid: strin
       className={className}
       onError={(e) => {
         const img = e.currentTarget;
-        if (!img.dataset.fb) { img.dataset.fb = "1"; img.src = avatarFallback(p.username); }
+        if (!img.dataset["fb"]) { img.dataset["fb"] = "1"; img.src = avatarFallback(p.username); }
       }}
     />
   );
@@ -50,7 +50,7 @@ function KitTabs({ kit }: { kit?: string | undefined }) {
   );
 }
 
-function TierChip({ kitId, tier }: { kitId: string; tier?: string }) {
+function TierChip({ kitId, tier }: { kitId: string; tier?: string | undefined }) {
   const k = KITS.find((x) => x.id === kitId)!;
   return (
     <div className="flex flex-col items-center gap-0.5" title={`${k.name}: ${tier ?? "Unranked"}`}>
