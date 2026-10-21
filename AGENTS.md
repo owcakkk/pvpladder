@@ -10,4 +10,4 @@
 <!-- LOVABLE:END -->
 
 - Kit list, tier points and title thresholds live in `src/lib/kits.ts`; change them there only so rankings and admin stay in sync.
-- Tier edits go straight from the browser to the database; admin-only writes are enforced by `has_role` RLS, and the first account created becomes admin.
+- Staff access is a shared password (STAFF_PASSWORD) stored in an encrypted session cookie; all ladder writes go through server functions in `src/lib/staff.functions.ts` that check that session, since the browser has no write access.

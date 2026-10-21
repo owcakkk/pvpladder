@@ -1,10 +1,8 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { Swords } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
 
 export function Header() {
-  const { isAdmin } = useAuth();
   const [q, setQ] = useState("");
   const navigate = useNavigate();
   return (
@@ -18,7 +16,7 @@ export function Header() {
       <nav className="hidden items-center gap-6 text-sm md:flex">
         <Link to="/" className="text-muted-foreground hover:text-foreground" activeProps={{ className: "text-foreground" }}>Rankings</Link>
         <Link to="/admin" className="text-muted-foreground hover:text-foreground" activeProps={{ className: "text-foreground" }}>
-          {isAdmin ? "Admin" : "Staff login"}
+          Staff
         </Link>
       </nav>
       <form
