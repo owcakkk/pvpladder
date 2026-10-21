@@ -132,7 +132,7 @@ export function Rankings({ kit, q }: { kit?: string | undefined; q?: string | un
   const [info, setInfo] = useState(false);
   let list = data ?? [];
   if (kit) {
-    list = list.filter((p) => p.tiers[kit]).sort((a, b) => TIER_POINTS[b.tiers[kit]] - TIER_POINTS[a.tiers[kit]]);
+    list = list.filter((p) => p.tiers[kit]).sort((a, b) => TIER_POINTS[b.tiers[kit]!] - TIER_POINTS[a.tiers[kit]!]);
   } else list = [...list].sort((a, b) => b.points - a.points);
   const ranked = list.map((p, i) => ({ p, i }));
   const shown = q ? ranked.filter(({ p }) => p.username.toLowerCase().includes(q.toLowerCase())) : ranked;

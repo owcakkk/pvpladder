@@ -42,7 +42,7 @@ function AuthForm() {
       ? await supabase.auth.signInWithPassword({ email, password })
       : await supabase.auth.signUp({ email, password, options: { emailRedirectTo: `${window.location.origin}/admin` } });
     setBusy(false);
-    if (res.error) return toast.error(res.error.message);
+    if (res.error) { toast.error(res.error.message); return; }
     if (mode === "up" && !res.data.session) toast.success("Check your email to confirm your account.");
   };
   return (
@@ -92,20 +92,20 @@ function AdminPanel() {
     const { error } = tier === ""
       ? await supabase.from("player_tiers").delete().eq("player_id", playerId).eq("kit", kit)
       : await supabase.from("player_tiers").upsert({ player_id: playerId, kit, tier, updated_at: new Date().toISOString() });
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     refresh();
   };
 
   const updateRegion = async (id: string, r: string) => {
     const { error } = await supabase.from("players").update({ region: r }).eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     refresh();
   };
 
   const remove = async (id: string, username: string) => {
     if (!confirm(`Remove ${username} from the ladder?`)) return;
     const { error } = await supabase.from("players").delete().eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     refresh();
   };
 
