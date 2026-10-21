@@ -67,12 +67,23 @@ export const addPlayer = createServerFn({ method: "POST" })
         if (j.data?.uuid) { uuid = j.data.uuid; username = j.data.username ?? username; }
       }
     } catch { /* fall back */ }
-    if (!uuid) {
-      const m = await fetch(`https://api.mojang.com/users/profiles/minecraft/${username}`);
-      if (!m.ok) throw new Error("Player not found");
-      const j = (await m.json()) as { id: string; name: string };
-      uuid = j.id; username = j.name;
+    const sources: Array<[string, (j: any) => { id?: string; name?: string } | undefined]> = [
+      [`https://api.minecraftservices.com/minecraft/profile/lookup/name/${username}`, (j) => j],
+      [`https://api.mojang.com/users/profiles/minecraft/${username}`, (j) => j],
+      [`https://playerdb.co/api/player/minecraft/${username}`, (j) => {
+        const pl = j?.data?.player; return pl ? { id: pl.raw_id, name: pl.username } : undefined;
+      }],
+    ];
+    for (const [url, pick] of sources) {
+      if (uuid) break;
+      try {
+        const m = await fetch(url, { headers: { accept: "application/json", "user-agent": "PvPLadder/1.0" } });
+        if (!m.ok) { console.warn("lookup failed", url, m.status); continue; }
+        const r = pick(await m.json());
+        if (r?.id) { uuid = r.id; username = r.name ?? username; }
+      } catch (e) { console.warn("lookup error", url, e); }
     }
+    if (!uuid) throw new Error("Player not found");
     const { error } = await db.from("players").insert({ username, mc_uuid: uuid, region: data.region });
     if (error) throw new Error(error.code === "23505" ? "Player already on the ladder" : "Couldn't add player");
     return { username };
