@@ -2,7 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Rankings } from "@/components/ladder/Rankings";
 
 export const Route = createFileRoute("/")({
-  validateSearch: (s: Record<string, unknown>) => ({ q: typeof s.q === "string" ? s.q : undefined }),
+  validateSearch: (s: Record<string, unknown>): { q?: string } =>
+    typeof s["q"] === "string" && s["q"] ? { q: s["q"] } : {},
   head: () => ({
     meta: [
       { title: "PvP Ladder — Overall Minecraft PvP Rankings" },

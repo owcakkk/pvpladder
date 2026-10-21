@@ -24,7 +24,7 @@ export function Avatar({ p, className }: { p: { username: string; mc_uuid: strin
   );
 }
 
-function KitTabs({ kit }: { kit?: string }) {
+function KitTabs({ kit }: { kit?: string | undefined }) {
   const Trophy = OVERALL_ICON;
   return (
     <div className="flex flex-wrap justify-center gap-2">
@@ -68,7 +68,7 @@ function rankBg(i: number) {
   return i === 0 ? "bg-rank-1" : i === 1 ? "bg-rank-2" : i === 2 ? "bg-rank-3" : "bg-rank-n";
 }
 
-function Row({ p, i, kit }: { p: LadderPlayer; i: number; kit?: string }) {
+function Row({ p, i, kit }: { p: LadderPlayer; i: number; kit?: string | undefined }) {
   const sorted = Object.entries(p.tiers).sort((a, b) => TIER_POINTS[b[1]] - TIER_POINTS[a[1]]);
   const unranked = KITS.filter((k) => !p.tiers[k.id]).map((k) => [k.id, undefined] as const);
   return (
@@ -127,7 +127,7 @@ function InfoPanel({ onClose }: { onClose: () => void }) {
   );
 }
 
-export function Rankings({ kit, q }: { kit?: string; q?: string }) {
+export function Rankings({ kit, q }: { kit?: string | undefined; q?: string | undefined }) {
   const { data, isLoading, error } = useQuery(ladderQuery);
   const [info, setInfo] = useState(false);
   let list = data ?? [];

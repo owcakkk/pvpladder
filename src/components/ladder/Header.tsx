@@ -22,7 +22,7 @@ export function Header() {
         </Link>
       </nav>
       <form
-        onSubmit={(e) => { e.preventDefault(); navigate({ to: "/", search: { q: q || undefined } }); }}
+        onSubmit={(e) => { e.preventDefault(); navigate({ to: "/", search: q ? { q } : {} }); }}
       >
         <input
           value={q}
