@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Info, X } from "lucide-react";
 import { Header } from "./Header";
+import { KitIcon } from "./KitIcon";
 import { ladderQuery, type LadderPlayer } from "@/lib/ladder";
 import {
   KITS, OVERALL_ICON, TIERS, TIER_POINTS, TITLES, avatarFallback, avatarUrl,
@@ -25,14 +26,13 @@ export function Avatar({ p, className }: { p: { username: string; mc_uuid: strin
 }
 
 function KitTabs({ kit }: { kit?: string | undefined }) {
-  const Trophy = OVERALL_ICON;
   return (
     <div className="flex flex-wrap justify-center gap-2">
       <Link
         to="/"
         className={`flex h-12 items-center gap-2 rounded-lg border px-4 font-display text-sm font-bold ${!kit ? "bg-accent shadow-glow" : "bg-row hover:bg-accent"}`}
       >
-        <Trophy className="h-6 w-6 text-gold" /> OVERALL
+        <KitIcon kit={{ id: "overall", name: "Overall", icon: OVERALL_ICON, tone: "text-gold" }} className="h-6 w-6 text-gold" /> OVERALL
       </Link>
       {KITS.map((k) => (
         <Link
@@ -42,7 +42,7 @@ function KitTabs({ kit }: { kit?: string | undefined }) {
           title={k.name}
           className={`flex h-12 items-center gap-2 rounded-lg border px-3 text-sm font-semibold ${kit === k.id ? "bg-accent shadow-glow" : "bg-row hover:bg-accent"}`}
         >
-          <k.icon className={`h-6 w-6 ${k.tone}`} />
+          <KitIcon kit={k} className={`h-6 w-6 ${k.tone}`} />
           {kit === k.id && <span className="font-display">{k.name}</span>}
         </Link>
       ))}
@@ -55,7 +55,7 @@ function TierChip({ kitId, tier }: { kitId: string; tier?: string | undefined })
   return (
     <div className="flex flex-col items-center gap-0.5" title={`${k.name}: ${tier ?? "Unranked"}`}>
       <span className={`grid h-8 w-8 place-items-center rounded-full bg-background ring-2 ${tier ? tierRingClass(tier) : "ring-low opacity-50"}`}>
-        <k.icon className={`h-4 w-4 ${k.tone}`} />
+        <KitIcon kit={k} className={`h-4 w-4 ${k.tone}`} />
       </span>
       <span className={`min-w-11 rounded-md px-1.5 text-center font-display text-xs font-bold ${tierBadgeClass(tier)}`}>
         {tier ?? "-"}
