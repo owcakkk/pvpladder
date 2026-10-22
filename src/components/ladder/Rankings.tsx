@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Info, X } from "lucide-react";
-import { Header } from "./Header";
+import { KitIcon } from "./KitIcon";
 import { ladderQuery, type LadderPlayer } from "@/lib/ladder";
 import {
   KITS, OVERALL_ICON, TIERS, TIER_POINTS, TITLES, avatarFallback, avatarUrl,
@@ -54,7 +54,7 @@ function TierChip({ kitId, tier }: { kitId: string; tier?: string | undefined })
   return (
     <div className="flex flex-col items-center gap-0.5" title={`${k.name}: ${tier ?? "Unranked"}`}>
       <span className={`grid h-8 w-8 place-items-center rounded-full bg-background ring-2 ${tier ? tierRingClass(tier) : "ring-low opacity-50"}`}>
-        <k.icon className={`h-4 w-4 ${k.tone}`} />
+        <KitIcon kit={k} className={`h-4 w-4 ${k.tone}`} />
       </span>
       <span className={`min-w-11 rounded-md px-1.5 text-center font-display text-xs font-bold ${tierBadgeClass(tier)}`}>
         {tier ?? "-"}
