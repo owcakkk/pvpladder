@@ -1,4 +1,4 @@
-import { Crosshair, Trophy, type LucideIcon } from "lucide-react";
+import { type LucideIcon } from "lucide-react";
 import axeImg from "@/assets/kit-axe.png.asset.json";
 import bowcartImg from "@/assets/kit-bowcart.png.asset.json";
 import diapotImg from "@/assets/kit-diapot.png.asset.json";
@@ -9,6 +9,8 @@ import smpImg from "@/assets/kit-smp.png.asset.json";
 import spearmaceImg from "@/assets/kit-spearmace.png.asset.json";
 import swordImg from "@/assets/kit-sword.png.asset.json";
 import uhcImg from "@/assets/kit-uhc.png.asset.json";
+import xbowImg from "@/assets/kit-xbow.png.asset.json";
+import overallImg from "@/assets/overall-ladder.png.asset.json";
 
 export type Kit = { id: string; name: string; image?: string; icon?: LucideIcon; tone: string };
 
@@ -24,9 +26,9 @@ export const KITS: Kit[] = [
   { id: "diapot", name: "Diamond Pot", image: diapotImg.url, tone: "text-region-as" },
   { id: "nethop", name: "Netherite OP", image: nethopImg.url, tone: "text-bronze" },
   { id: "bowcart", name: "Bow Cart", image: bowcartImg.url, tone: "text-gold" },
-  { id: "xbowcart", name: "X-Bow Cart", icon: Crosshair, tone: "text-region-na" },
+  { id: "xbowcart", name: "X-Bow Cart", image: xbowImg.url, tone: "text-region-na" },
 ];
-export const OVERALL_ICON = Trophy;
+export const OVERALL_ICON = overallImg.url;
 
 export const TIERS = ["HT1", "LT1", "HT2", "LT2", "HT3", "LT3", "HT4", "LT4", "HT5", "LT5"] as const;
 export type Tier = (typeof TIERS)[number];

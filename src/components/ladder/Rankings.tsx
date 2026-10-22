@@ -32,7 +32,7 @@ function KitTabs({ kit }: { kit?: string | undefined }) {
         to="/"
         className={`flex h-12 items-center gap-2 rounded-lg border px-4 font-display text-sm font-bold ${!kit ? "bg-accent shadow-glow" : "bg-row hover:bg-accent"}`}
       >
-        <KitIcon kit={{ id: "overall", name: "Overall", icon: OVERALL_ICON, tone: "text-gold" }} className="h-6 w-6 text-gold" /> OVERALL
+        <KitIcon kit={{ id: "overall", name: "Overall", image: OVERALL_ICON, tone: "text-gold" }} className="h-6 w-6 text-gold" /> OVERALL
       </Link>
       {KITS.map((k) => (
         <Link
