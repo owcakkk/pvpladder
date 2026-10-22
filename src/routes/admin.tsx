@@ -5,6 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Lock, Trash2 } from "lucide-react";
 import { Header } from "@/components/ladder/Header";
+import { KitIcon } from "@/components/ladder/KitIcon";
 import { Avatar } from "@/components/ladder/Rankings";
 import { ladderQuery } from "@/lib/ladder";
 import {
