@@ -10,7 +10,7 @@ import spearmaceImg from "@/assets/kit-spearmace.png.asset.json";
 import swordImg from "@/assets/kit-sword.png.asset.json";
 import uhcImg from "@/assets/kit-uhc.png.asset.json";
 import xbowImg from "@/assets/kit-xbow.png.asset.json";
-import overallImg from "@/assets/overall-ladder.png.asset.json";
+import overallImg from "@/assets/overall-ladder-big.png.asset.json";
 
 export type Kit = { id: string; name: string; image?: string; icon?: LucideIcon; tone: string };
 
