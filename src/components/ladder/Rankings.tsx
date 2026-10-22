@@ -25,7 +25,6 @@ export function Avatar({ p, className }: { p: { username: string; mc_uuid: strin
 }
 
 function KitTabs({ kit }: { kit?: string | undefined }) {
-  const Trophy = OVERALL_ICON;
   return (
     <div className="flex flex-wrap justify-center gap-2">
       <Link
