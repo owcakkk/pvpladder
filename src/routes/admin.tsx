@@ -127,7 +127,7 @@ function AdminPanel() {
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-6">
                 {KITS.map((k) => (
                   <label key={k.id} className="flex items-center gap-2 rounded-md bg-background p-2 text-xs">
-                    <k.icon className={`h-4 w-4 shrink-0 ${k.tone}`} />
+                    <KitIcon kit={k} className={`h-4 w-4 shrink-0 ${k.tone}`} />
                     <span className="flex-1 truncate">{k.name}</span>
                     <select
                       value={p.tiers[k.id] ?? ""}
