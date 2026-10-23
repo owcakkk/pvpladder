@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { useSession } from "@tanstack/react-start/server";
 import { createHash, timingSafeEqual } from "node:crypto";
-import { DEFENCE_POINTS, KITS, REGIONS, TIERS } from "./kits";
+import { DEFENCE_POINTS, KITS, REGIONS, TIERS, validateTierLP } from "./kits";
 
 type StaffSession = { staff?: boolean };
 
@@ -90,15 +90,16 @@ export const addPlayer = createServerFn({ method: "POST" })
   });
 
 export const setTier = createServerFn({ method: "POST" })
-  .inputValidator((d: { playerId: string; kit: string; tier: string }) => {
+  .inputValidator((d: { playerId: string; kit: string; tier: string; tierLP?: number | null }) => {
+    if (!KITS.some((k) => k.id === d.kit)) throw new Error("Invalid kit");
     if (d.tier !== "" && !(TIERS as readonly string[]).includes(d.tier)) throw new Error("Invalid tier");
-    return d;
+    return { ...d, tierLP: validateTierLP(d.tier, d.tierLP) };
   })
   .handler(async ({ data }) => {
     const db = await requireStaff();
     const { error } = data.tier === ""
       ? await db.from("player_tiers").delete().eq("player_id", data.playerId).eq("kit", data.kit)
-      : await db.from("player_tiers").upsert({ player_id: data.playerId, kit: data.kit, tier: data.tier, updated_at: new Date().toISOString() });
+      : await db.from("player_tiers").upsert({ player_id: data.playerId, kit: data.kit, tier: data.tier, tier_lp: data.tierLP, updated_at: new Date().toISOString() });
     if (error) throw new Error("Couldn't save tier");
     return { ok: true };
   });
