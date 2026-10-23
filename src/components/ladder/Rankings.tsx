@@ -112,18 +112,24 @@ function InfoPanel({ onClose }: { onClose: () => void }) {
         <ul className="mb-6 space-y-1 text-sm">
           {TITLES.map((t) => (
             <li key={t.name} className="flex justify-between rounded bg-row px-3 py-2">
+              <span>{t.name}</span>
               <span className="text-muted-foreground">{t.min ? `${t.min}+ LP` : "< 10 LP"}</span>
             </li>
           ))}
         </ul>
-        <h3 className="mb-2 font-semibold">Points per tier</h3>
+        <h3 className="mb-2 font-semibold">Ladder points per tier</h3>
         <div className="grid grid-cols-2 gap-2 text-sm">
           {TIERS.map((t) => (
             <div key={t} className="flex items-center justify-between rounded bg-row px-3 py-2">
               <span className={`rounded px-2 font-display font-bold ${tierBadgeClass(t)}`}>{t}</span>
-              <span>{TIER_POINTS[t]} pts</span>
+              <span>{TIER_POINTS[t]} LP</span>
             </div>
           ))}
+        </div>
+        <h3 className="mb-2 mt-6 font-semibold">Tier defence bonuses</h3>
+        <div className="space-y-2 text-sm">
+          <p className="flex justify-between"><span>Successful defence</span><span>+{DEFENCE_POINTS.successful} LP</span></p>
+          <p className="flex justify-between"><span>Unsuccessful defence</span><span>{DEFENCE_POINTS.unsuccessful} LP</span></p>
         </div>
       </div>
     </div>
@@ -135,7 +141,7 @@ export function Rankings({ kit, q }: { kit?: string | undefined; q?: string | un
   const [info, setInfo] = useState(false);
   let list = data ?? [];
   if (kit) {
-    list = list.filter((p) => p.tiers[kit]).sort((a, b) => TIER_POINTS[b.tiers[kit]!] - TIER_POINTS[a.tiers[kit]!]);
+    list = list.filter((p) => p.tiers[kit]).sort((a, b) => kitPoints(b.tiers[kit], b.bonuses[kit] ?? 0) - kitPoints(a.tiers[kit], a.bonuses[kit] ?? 0));
   } else list = [...list].sort((a, b) => b.points - a.points);
   const ranked = list.map((p, i) => ({ p, i }));
   const shown = q ? ranked.filter(({ p }) => p.username.toLowerCase().includes(q.toLowerCase())) : ranked;
