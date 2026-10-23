@@ -34,8 +34,13 @@ export const TIERS = ["HT1", "LT1", "HT2", "LT2", "HT3", "LT3", "HT4", "LT4", "H
 export type Tier = (typeof TIERS)[number];
 
 export const TIER_POINTS: Record<Tier, number> = {
-  HT1: 60, LT1: 45, HT2: 30, LT2: 20, HT3: 10, LT3: 6, HT4: 4, LT4: 3, HT5: 2, LT5: 1,
+  HT1: 1600, LT1: 1300, HT2: 1000, LT2: 800, HT3: 600, LT3: 6, HT4: 4, LT4: 3, HT5: 2, LT5: 1,
 };
+
+export const DEFENCE_POINTS = { successful: 50, unsuccessful: -15 } as const;
+export const kitPoints = (tier?: Tier, bonus = 0) => tier ? TIER_POINTS[tier] + bonus : 0;
+export const computePoints = (tiers: Record<string, Tier>, bonuses: Record<string, number> = {}) =>
+  Object.entries(tiers).reduce((sum, [kit, tier]) => sum + kitPoints(tier, bonuses[kit] ?? 0), 0);
 
 export const TITLES = [
   { min: 400, name: "Combat Grandmaster" },
@@ -47,7 +52,7 @@ export const TITLES = [
   { min: 0, name: "Rookie" },
 ];
 
-export const titleFor = (points: number) => TITLES.find((t) => points >= t.min)!.name;
+export const titleFor = (points: number) => TITLES.find((t) => points >= t.min)?.name ?? "Rookie";
 
 export const tierBadgeClass = (tier?: string) => {
   const n = tier?.[2];
