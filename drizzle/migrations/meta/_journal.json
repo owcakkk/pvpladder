@@ -8,6 +8,13 @@
       "when": 1792610186402,
       "tag": "0000_migration",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792786774963,
+      "tag": "0001_tier_bonus_ladder_points",
+      "breakpoints": true
     }
   ]
 }

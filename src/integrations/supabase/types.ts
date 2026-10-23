@@ -16,18 +16,21 @@ export type Database = {
     Tables: {
       player_tiers: {
         Row: {
+          bonus_points: number
           kit: string
           player_id: string
           tier: string
           updated_at: string
         }
         Insert: {
+          bonus_points?: number
           kit: string
           player_id: string
           tier: string
           updated_at?: string
         }
         Update: {
+          bonus_points?: number
           kit?: string
           player_id?: string
           tier?: string
@@ -90,6 +93,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      adjust_tier_bonus: {
+        Args: { p_delta: number; p_kit: string; p_player_id: string }
+        Returns: number
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
