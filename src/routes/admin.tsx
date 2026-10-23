@@ -5,14 +5,13 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Lock, Trash2 } from "lucide-react";
 import { Header } from "@/components/ladder/Header";
-import { KitIcon } from "@/components/ladder/KitIcon";
-import { BonusEditor } from "@/components/ladder/BonusEditor";
+import { TierEditor } from "@/components/ladder/TierEditor";
 import { Avatar } from "@/components/ladder/Rankings";
 import { ladderQuery } from "@/lib/ladder";
 import {
-  addPlayer, lockStaff, removePlayer, setTier, staffStatus, unlockStaff, updateRegion,
+  addPlayer, lockStaff, removePlayer, staffStatus, unlockStaff, updateRegion,
 } from "@/lib/staff.functions";
-import { KITS, REGIONS, TIERS, tierBadgeClass } from "@/lib/kits";
+import { KITS, REGIONS } from "@/lib/kits";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -66,7 +65,6 @@ function AdminPanel() {
   const qc = useQueryClient();
   const { data: players = [] } = useQuery(ladderQuery);
   const add = useServerFn(addPlayer);
-  const saveTier = useServerFn(setTier);
   const saveRegion = useServerFn(updateRegion);
   const del = useServerFn(removePlayer);
   const [name, setName] = useState("");
@@ -128,22 +126,8 @@ function AdminPanel() {
               </div>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
                 {KITS.map((k) => (
-                  <div key={k.id} className="rounded-md bg-background p-2 text-xs">
-                  <label className="flex items-center gap-2">
-                    <KitIcon kit={k} className={`h-4 w-4 shrink-0 ${k.tone}`} />
-                    <span className="flex-1 truncate">{k.name}</span>
-                    <select
-                      value={p.tiers[k.id] ?? ""}
-                      onChange={(e) => run(() => saveTier({ data: { playerId: p.id, kit: k.id, tier: e.target.value } }))}
-                      className={`rounded px-1 py-0.5 font-display font-bold ${tierBadgeClass(p.tiers[k.id])}`}
-                    >
-                      <option value="">—</option>
-                      {TIERS.map((t) => <option key={t}>{t}</option>)}
-                    </select>
-                  </label>
-                  <BonusEditor key={`${k.id}-${p.bonuses[k.id] ?? 0}`} playerId={p.id} kit={k.id}
-                    bonus={p.bonuses[k.id] ?? 0} disabled={!p.tiers[k.id]} refresh={refresh} />
-                  </div>
+                  <TierEditor key={`${k.id}-${p.tiers[k.id]}-${p.tierLP[k.id]}-${p.bonuses[k.id]}`} playerId={p.id} kit={k}
+                    tier={p.tiers[k.id]} lp={p.tierLP[k.id] ?? null} bonus={p.bonuses[k.id] ?? 0} refresh={refresh} />
                 ))}
               </div>
             </div>

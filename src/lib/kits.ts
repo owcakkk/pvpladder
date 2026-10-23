@@ -34,13 +34,33 @@ export const TIERS = ["HT1", "LT1", "HT2", "LT2", "HT3", "LT3", "HT4", "LT4", "H
 export type Tier = (typeof TIERS)[number];
 
 export const TIER_POINTS: Record<Tier, number> = {
-  HT1: 1600, LT1: 1300, HT2: 1000, LT2: 800, HT3: 600, LT3: 6, HT4: 4, LT4: 3, HT5: 2, LT5: 1,
+  HT1: 1600, LT1: 1300, HT2: 1000, LT2: 800, HT3: 600, LT3: 0, HT4: 0, LT4: 0, HT5: 0, LT5: 0,
 };
 
+export const LP_RANGES = [
+  { tier: "LT3", min: 350, max: 400 },
+  { tier: "HT4", min: 300, max: 349 },
+  { tier: "LT4", min: 250, max: 299 },
+  { tier: "HT5", min: 100, max: 249 },
+  { tier: "LT5", min: 0, max: 99 },
+] as const;
+export const isLowerTier = (tier?: string) => LP_RANGES.some((range) => range.tier === tier);
+export function tierForLP(points: number): Tier {
+  if (!Number.isInteger(points) || points < 0 || points > 400) throw new Error("Tier LP must be a whole number from 0 to 400");
+  return LP_RANGES.find((range) => points >= range.min && points <= range.max)?.tier ?? "LT5";
+}
+export function validateTierLP(tier: string, points?: number | null) {
+  if (!isLowerTier(tier)) return null;
+  if (points == null) throw new Error("Enter tier LP before saving");
+  if (tierForLP(points) !== tier) throw new Error("Tier LP does not match the selected tier's range");
+  return points;
+}
+
 export const DEFENCE_POINTS = { successful: 50, unsuccessful: -15 } as const;
-export const kitPoints = (tier?: Tier, bonus = 0) => tier ? TIER_POINTS[tier] + bonus : 0;
-export const computePoints = (tiers: Record<string, Tier>, bonuses: Record<string, number> = {}) =>
-  Object.entries(tiers).reduce((sum, [kit, tier]) => sum + kitPoints(tier, bonuses[kit] ?? 0), 0);
+export const kitPoints = (tier?: Tier, bonus = 0, lp?: number | null) =>
+  !tier ? 0 : isLowerTier(tier) ? lp ?? 0 : TIER_POINTS[tier] + bonus;
+export const computePoints = (tiers: Record<string, Tier>, bonuses: Record<string, number> = {}, lp: Record<string, number | null> = {}) =>
+  Object.entries(tiers).reduce((sum, [kit, tier]) => sum + kitPoints(tier, bonuses[kit] ?? 0, lp[kit]), 0);
 
 export const TITLES = [
   { min: 400, name: "Combat Grandmaster" },
