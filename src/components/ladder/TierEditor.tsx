@@ -9,7 +9,7 @@ import { TIERS, LP_RANGES, isLowerTier, tierForLP, validateTierLP, tierBadgeClas
 import { setTier } from "@/lib/staff.functions";
 
 export function TierEditor({ playerId, kit, tier, lp, bonus, refresh }: {
-  playerId: string; kit: Kit; tier?: string; lp: number | null; bonus: number; refresh: () => Promise<unknown>;
+  playerId: string; kit: Kit; tier?: string | undefined; lp: number | null; bonus: number; refresh: () => Promise<unknown>;
 }) {
   const [selected, setSelected] = useState(tier ?? "");
   const [value, setValue] = useState(lp == null ? "" : String(lp));
