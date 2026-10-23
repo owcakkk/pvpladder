@@ -15,6 +15,13 @@
       "when": 1792786774963,
       "tag": "0001_tier_bonus_ladder_points",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792787109557,
+      "tag": "0002_per_kit_tier_lp",
+      "breakpoints": true
     }
   ]
 }
