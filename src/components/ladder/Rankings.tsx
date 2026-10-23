@@ -1,13 +1,11 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
-import { Info, X } from "lucide-react";
 import { Header } from "./Header";
 import { KitIcon } from "./KitIcon";
 import { ladderQuery, type LadderPlayer } from "@/lib/ladder";
 import {
-  KITS, OVERALL_ICON, TIERS, TIER_POINTS, TITLES, avatarFallback, avatarUrl,
-  regionClass, tierBadgeClass, tierRingClass, titleFor, kitPoints, DEFENCE_POINTS,
+  KITS, OVERALL_ICON, TIER_POINTS, avatarFallback, avatarUrl,
+  regionClass, tierBadgeClass, tierRingClass, titleFor, kitPoints, isLowerTier,
 } from "@/lib/kits";
 
 export function Avatar({ p, className }: { p: { username: string; mc_uuid: string | null }; className?: string }) {
@@ -70,8 +68,8 @@ function rankBg(i: number) {
 }
 
 function Row({ p, i, kit }: { p: LadderPlayer; i: number; kit?: string | undefined }) {
-  const points = kit ? kitPoints(p.tiers[kit], p.bonuses[kit] ?? 0) : p.points;
-  const bonus = kit ? p.bonuses[kit] ?? 0 : Object.values(p.bonuses).reduce((sum, value) => sum + value, 0);
+  const points = kit ? kitPoints(p.tiers[kit], p.bonuses[kit] ?? 0, p.tierLP[kit]) : p.points;
+  const bonus = kit ? (isLowerTier(p.tiers[kit]) ? 0 : p.bonuses[kit] ?? 0) : Object.entries(p.bonuses).reduce((sum, [id, value]) => sum + (isLowerTier(p.tiers[id]) ? 0 : value), 0);
   const sorted = Object.entries(p.tiers).sort((a, b) => TIER_POINTS[b[1]] - TIER_POINTS[a[1]]);
   const unranked = KITS.filter((k) => !p.tiers[k.id]).map((k) => [k.id, undefined] as const);
   return (
@@ -100,48 +98,11 @@ function Row({ p, i, kit }: { p: LadderPlayer; i: number; kit?: string | undefin
   );
 }
 
-function InfoPanel({ onClose }: { onClose: () => void }) {
-  return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-background/80 p-4" onClick={onClose}>
-      <div className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-xl border bg-popover p-6" onClick={(e) => e.stopPropagation()}>
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="font-display text-xl font-bold">Information</h2>
-          <button onClick={onClose} aria-label="Close"><X className="h-5 w-5" /></button>
-        </div>
-        <h3 className="mb-2 font-semibold">Titles</h3>
-        <ul className="mb-6 space-y-1 text-sm">
-          {TITLES.map((t) => (
-            <li key={t.name} className="flex justify-between rounded bg-row px-3 py-2">
-              <span>{t.name}</span>
-              <span className="text-muted-foreground">{t.min ? `${t.min}+ LP` : "< 10 LP"}</span>
-            </li>
-          ))}
-        </ul>
-        <h3 className="mb-2 font-semibold">Ladder points per tier</h3>
-        <div className="grid grid-cols-2 gap-2 text-sm">
-          {TIERS.map((t) => (
-            <div key={t} className="flex items-center justify-between rounded bg-row px-3 py-2">
-              <span className={`rounded px-2 font-display font-bold ${tierBadgeClass(t)}`}>{t}</span>
-              <span>{TIER_POINTS[t]} LP</span>
-            </div>
-          ))}
-        </div>
-        <h3 className="mb-2 mt-6 font-semibold">Tier defence bonuses</h3>
-        <div className="space-y-2 text-sm">
-          <p className="flex justify-between"><span>Successful defence</span><span>+{DEFENCE_POINTS.successful} LP</span></p>
-          <p className="flex justify-between"><span>Unsuccessful defence</span><span>{DEFENCE_POINTS.unsuccessful} LP</span></p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export function Rankings({ kit, q }: { kit?: string | undefined; q?: string | undefined }) {
   const { data, isLoading, error } = useQuery(ladderQuery);
-  const [info, setInfo] = useState(false);
   let list = data ?? [];
   if (kit) {
-    list = list.filter((p) => p.tiers[kit]).sort((a, b) => kitPoints(b.tiers[kit], b.bonuses[kit] ?? 0) - kitPoints(a.tiers[kit], a.bonuses[kit] ?? 0));
+    list = list.filter((p) => p.tiers[kit]).sort((a, b) => kitPoints(b.tiers[kit], b.bonuses[kit] ?? 0, b.tierLP[kit]) - kitPoints(a.tiers[kit], a.bonuses[kit] ?? 0, a.tierLP[kit]));
   } else list = [...list].sort((a, b) => b.points - a.points);
   const ranked = list.map((p, i) => ({ p, i }));
   const shown = q ? ranked.filter(({ p }) => p.username.toLowerCase().includes(q.toLowerCase())) : ranked;
@@ -151,11 +112,6 @@ export function Rankings({ kit, q }: { kit?: string | undefined; q?: string | un
       <Header />
       <main className="mx-auto mt-8 max-w-6xl rounded-xl border bg-panel p-5">
         <KitTabs kit={kit} />
-        <div className="mt-5 flex justify-end">
-          <button onClick={() => setInfo(true)} className="flex items-center gap-2 rounded-lg border bg-row px-4 py-2 text-sm font-semibold hover:bg-accent">
-            <Info className="h-4 w-4" /> Information
-          </button>
-        </div>
         <div className="mt-4 hidden grid-cols-[8rem_16rem_6rem_1fr] px-4 pb-2 text-sm font-semibold text-muted-foreground lg:grid">
           <span className="pl-4">#</span><span className="pl-4">Player</span><span>Region</span><span className="text-center">Tiers</span>
         </div>
@@ -166,7 +122,6 @@ export function Rankings({ kit, q }: { kit?: string | undefined; q?: string | un
           {shown.map(({ p, i }) => <Row key={p.id} p={p} i={i} kit={kit} />)}
         </div>
       </main>
-      {info && <InfoPanel onClose={() => setInfo(false)} />}
     </div>
   );
 }
