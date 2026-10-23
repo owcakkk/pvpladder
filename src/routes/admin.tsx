@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Lock, Trash2 } from "lucide-react";
 import { Header } from "@/components/ladder/Header";
 import { KitIcon } from "@/components/ladder/KitIcon";
+import { BonusEditor } from "@/components/ladder/BonusEditor";
 import { Avatar } from "@/components/ladder/Rankings";
 import { ladderQuery } from "@/lib/ladder";
 import {
@@ -115,7 +116,7 @@ function AdminPanel() {
               <div className="mb-3 flex items-center gap-3">
                 <Avatar p={p} className="h-10" />
                 <span className="font-display text-lg font-bold">{p.username}</span>
-                <span className="text-sm text-muted-foreground">{p.points} pts</span>
+                <span className="text-sm text-muted-foreground">{p.points} LP</span>
                 <select className="ml-auto rounded-md border bg-background px-2 py-1 text-sm" value={p.region}
                   onChange={(e) => run(() => saveRegion({ data: { playerId: p.id, region: e.target.value } }))}>
                   {REGIONS.map((r) => <option key={r}>{r}</option>)}
@@ -125,9 +126,10 @@ function AdminPanel() {
                   <Trash2 className="h-4 w-4" />
                 </button>
               </div>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-6">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
                 {KITS.map((k) => (
-                  <label key={k.id} className="flex items-center gap-2 rounded-md bg-background p-2 text-xs">
+                  <div key={k.id} className="rounded-md bg-background p-2 text-xs">
+                  <label className="flex items-center gap-2">
                     <KitIcon kit={k} className={`h-4 w-4 shrink-0 ${k.tone}`} />
                     <span className="flex-1 truncate">{k.name}</span>
                     <select
@@ -139,6 +141,9 @@ function AdminPanel() {
                       {TIERS.map((t) => <option key={t}>{t}</option>)}
                     </select>
                   </label>
+                  <BonusEditor key={`${k.id}-${p.bonuses[k.id] ?? 0}`} playerId={p.id} kit={k.id}
+                    bonus={p.bonuses[k.id] ?? 0} disabled={!p.tiers[k.id]} refresh={refresh} />
+                  </div>
                 ))}
               </div>
             </div>
