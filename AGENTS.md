@@ -11,3 +11,4 @@
 
 - Kit list, tier points and title thresholds live in `src/lib/kits.ts`; change them there only so rankings and admin stay in sync.
 - Staff access is a shared password (STAFF_PASSWORD) stored in an encrypted session cookie; all ladder writes go through server functions in `src/lib/staff.functions.ts` that check that session, since the browser has no write access.
+- Additional Ladder points belong to the assigned player-kit tier row; total and kit scores use shared scoring helpers in `src/lib/kits.ts`, and defence adjustments use a service-role-only atomic database function to avoid lost concurrent updates.

@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { useSession } from "@tanstack/react-start/server";
 import { createHash, timingSafeEqual } from "node:crypto";
-import { REGIONS, TIERS } from "./kits";
+import { DEFENCE_POINTS, KITS, REGIONS, TIERS } from "./kits";
 
 type StaffSession = { staff?: boolean };
 
@@ -113,6 +113,37 @@ export const updateRegion = createServerFn({ method: "POST" })
     const { error } = await db.from("players").update({ region: data.region }).eq("id", data.playerId);
     if (error) throw new Error("Couldn't update region");
     return { ok: true };
+  });
+
+export const setBonusPoints = createServerFn({ method: "POST" })
+  .inputValidator((d: { playerId: string; kit: string; points: number }) => {
+    if (!KITS.some((k) => k.id === d.kit)) throw new Error("Invalid kit");
+    if (!Number.isInteger(d.points) || d.points < -2147483648 || d.points > 2147483647) throw new Error("Enter whole-number LP");
+    return d;
+  })
+  .handler(async ({ data }) => {
+    const db = await requireStaff();
+    const { data: row, error } = await db.from("player_tiers")
+      .update({ bonus_points: data.points, updated_at: new Date().toISOString() })
+      .eq("player_id", data.playerId).eq("kit", data.kit).select("bonus_points").maybeSingle();
+    if (error) throw new Error("Couldn't save additional LP");
+    if (!row) throw new Error("Assign a tier first");
+    return row.bonus_points;
+  });
+
+export const recordDefence = createServerFn({ method: "POST" })
+  .inputValidator((d: { playerId: string; kit: string; outcome: "successful" | "unsuccessful" }) => {
+    if (!KITS.some((k) => k.id === d.kit)) throw new Error("Invalid kit");
+    if (d.outcome !== "successful" && d.outcome !== "unsuccessful") throw new Error("Invalid defence outcome");
+    return d;
+  })
+  .handler(async ({ data }) => {
+    const db = await requireStaff();
+    const { data: points, error } = await db.rpc("adjust_tier_bonus", {
+      p_player_id: data.playerId, p_kit: data.kit, p_delta: DEFENCE_POINTS[data.outcome],
+    });
+    if (error) throw new Error("Couldn't record defence; assign a tier first");
+    return points;
   });
 
 export const removePlayer = createServerFn({ method: "POST" })
