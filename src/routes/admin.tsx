@@ -91,7 +91,7 @@ function RecordEditor({ p, refresh }: { p: TournamentPlayer; refresh: () => void
 function TournamentSection() {
   const qc = useQueryClient();
   const { data: tournament } = useQuery(tournamentQuery);
-  const setTitle = useServerFn(setTournamentTitle);
+  const saveTitle = useServerFn(setTournamentTitle);
   const addTp = useServerFn(addTournamentPlayer);
   const delTp = useServerFn(removeTournamentPlayer);
   const [title, setTitle] = useState<string | null>(null);
@@ -106,7 +106,7 @@ function TournamentSection() {
       <h2 className="mb-3 font-display text-xl font-bold">Tournament</h2>
       <form className="mb-4 flex flex-wrap gap-3" onSubmit={async (e) => {
         e.preventDefault();
-        try { await setTitle({ data: { title: titleValue } }); setTitle(null); await refresh(); toast.success("Title saved"); }
+        try { await saveTitle({ data: { title: titleValue } }); setTitle(null); await refresh(); toast.success("Title saved"); }
         catch (err) { toast.error(errMsg(err)); }
       }}>
         <input className={`${inputCls} max-w-xs`} placeholder="Tournament title" value={titleValue}
