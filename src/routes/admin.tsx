@@ -11,6 +11,10 @@ import { ladderQuery } from "@/lib/ladder";
 import {
   addPlayer, lockStaff, removePlayer, staffStatus, unlockStaff, updateRegion,
 } from "@/lib/staff.functions";
+import {
+  addTournamentPlayer, removeTournamentPlayer, setTournamentRecord, setTournamentTitle,
+} from "@/lib/tournaments.functions";
+import { ratio, sortByRatio, tournamentQuery, type TournamentPlayer } from "@/lib/tournaments";
 import { KITS, REGIONS } from "@/lib/kits";
 
 export const Route = createFileRoute("/admin")({
