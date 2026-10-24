@@ -5,7 +5,7 @@ import { KitIcon } from "./KitIcon";
 import { ladderQuery, type LadderPlayer } from "@/lib/ladder";
 import {
   KITS, OVERALL_ICON, TIER_POINTS, avatarFallback, avatarUrl,
-  regionClass, tierBadgeClass, tierRingClass, titleFor, kitPoints, isLowerTier,
+  regionClass, tierBadgeClass, tierRingClass, kitPoints, isLowerTier,
 } from "@/lib/kits";
 
 export function Avatar({ p, className }: { p: { username: string; mc_uuid: string | null }; className?: string }) {
