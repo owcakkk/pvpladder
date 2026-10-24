@@ -226,6 +226,8 @@ function AdminPanel() {
           ))}
         </div>
       </section>
+
+      <TournamentSection />
     </main>
   );
 }
