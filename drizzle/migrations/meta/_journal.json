@@ -22,6 +22,13 @@
       "when": 1792787109557,
       "tag": "0002_per_kit_tier_lp",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792833558862,
+      "tag": "0003_create_tournaments",
+      "breakpoints": true
     }
   ]
 }

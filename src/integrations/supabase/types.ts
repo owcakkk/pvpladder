@@ -73,6 +73,62 @@ export type Database = {
         }
         Relationships: []
       }
+      tournament_players: {
+        Row: {
+          created_at: string
+          id: string
+          losses: number
+          mc_uuid: string | null
+          tournament_id: string
+          username: string
+          wins: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          losses?: number
+          mc_uuid?: string | null
+          tournament_id: string
+          username: string
+          wins?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          losses?: number
+          mc_uuid?: string | null
+          tournament_id?: string
+          username?: string
+          wins?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tournament_players_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tournaments: {
+        Row: {
+          created_at: string
+          id: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          title?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          title?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string

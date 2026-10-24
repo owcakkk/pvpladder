@@ -13,6 +13,7 @@ export function Header() {
       </Link>
       <nav className="hidden items-center gap-6 text-sm md:flex">
         <Link to="/" className="text-muted-foreground hover:text-foreground" activeProps={{ className: "text-foreground" }}>Rankings</Link>
+        <Link to="/tournaments" className="text-muted-foreground hover:text-foreground" activeProps={{ className: "text-foreground" }}>Tournaments</Link>
         <Link to="/admin" className="text-muted-foreground hover:text-foreground" activeProps={{ className: "text-foreground" }}>
           Staff
         </Link>
