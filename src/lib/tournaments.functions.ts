@@ -20,45 +20,54 @@ async function requireStaff() {
 
 export const MAX_TOURNAMENT_PLAYERS = 10;
 
-async function ensureTournament(db: Awaited<ReturnType<typeof requireStaff>>) {
-  const { data: existing } = await db
-    .from("tournaments").select("id").order("created_at", { ascending: true }).limit(1).maybeSingle();
-  if (existing) return existing.id as string;
-  const { data: created, error } = await db.from("tournaments").insert({}).select("id").single();
-  if (error || !created) throw new Error("Couldn't create tournament");
-  return created.id as string;
-}
+const validTitle = (d: { title: string }) => {
+  const title = String(d.title ?? "").trim();
+  if (!title || title.length > 80) throw new Error("Enter a title (max 80 characters)");
+  return title;
+};
 
-export const setTournamentTitle = createServerFn({ method: "POST" })
-  .inputValidator((d: { title: string }) => {
-    const title = String(d.title ?? "").trim();
-    if (!title || title.length > 80) throw new Error("Enter a title (max 80 characters)");
-    return { title };
-  })
+export const createTournament = createServerFn({ method: "POST" })
+  .inputValidator((d: { title: string }) => ({ title: validTitle(d) }))
   .handler(async ({ data }) => {
     const db = await requireStaff();
-    const id = await ensureTournament(db);
-    const { error } = await db.from("tournaments").update({ title: data.title }).eq("id", id);
+    const { data: row, error } = await db.from("tournaments").insert({ title: data.title }).select("id").single();
+    if (error || !row) throw new Error("Couldn't create tournament");
+    return { id: row.id as string };
+  });
+
+export const deleteTournament = createServerFn({ method: "POST" })
+  .inputValidator((d: { tournamentId: string }) => d)
+  .handler(async ({ data }) => {
+    const db = await requireStaff();
+    const { error } = await db.from("tournaments").delete().eq("id", data.tournamentId);
+    if (error) throw new Error("Couldn't delete tournament");
+    return { ok: true };
+  });
+
+export const setTournamentTitle = createServerFn({ method: "POST" })
+  .inputValidator((d: { tournamentId: string; title: string }) => ({ tournamentId: d.tournamentId, title: validTitle(d) }))
+  .handler(async ({ data }) => {
+    const db = await requireStaff();
+    const { error } = await db.from("tournaments").update({ title: data.title }).eq("id", data.tournamentId);
     if (error) throw new Error("Couldn't save title");
     return { ok: true };
   });
 
 export const addTournamentPlayer = createServerFn({ method: "POST" })
-  .inputValidator((d: { username: string }) => {
+  .inputValidator((d: { tournamentId: string; username: string }) => {
     const u = String(d.username ?? "").trim();
     if (!/^[A-Za-z0-9_]{2,16}$/.test(u)) throw new Error("Invalid Minecraft username");
-    return { username: u };
+    return { tournamentId: d.tournamentId, username: u };
   })
   .handler(async ({ data }) => {
     const db = await requireStaff();
-    const id = await ensureTournament(db);
     const { count } = await db
-      .from("tournament_players").select("id", { count: "exact", head: true }).eq("tournament_id", id);
+      .from("tournament_players").select("id", { count: "exact", head: true }).eq("tournament_id", data.tournamentId);
     if ((count ?? 0) >= MAX_TOURNAMENT_PLAYERS) throw new Error(`Tournament is full (max ${MAX_TOURNAMENT_PLAYERS} players)`);
     const found = await lookupMcPlayer(data.username);
     if (!found) throw new Error("Player not found");
     const { error } = await db.from("tournament_players")
-      .insert({ tournament_id: id, username: found.username, mc_uuid: found.uuid });
+      .insert({ tournament_id: data.tournamentId, username: found.username, mc_uuid: found.uuid });
     if (error) throw new Error(error.code === "23505" ? "Player already registered" : "Couldn't add player");
     return { username: found.username };
   });
