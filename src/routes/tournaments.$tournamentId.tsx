@@ -6,7 +6,7 @@ import { Avatar } from "@/components/ladder/Rankings";
 import { ratio, sortByRatio, tournamentQuery } from "@/lib/tournaments";
 import { tierBadgeClass } from "@/lib/kits";
 
-export const Route = createFileRoute("/tournaments")({
+export const Route = createFileRoute("/tournaments/$tournamentId")({
   head: () => ({
     meta: [
       { title: "Tournaments — PvP Ladder" },

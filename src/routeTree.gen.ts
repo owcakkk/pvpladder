@@ -11,8 +11,8 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
-import { Route as TournamentsRouteImport } from './routes/tournaments'
 import { Route as RankingsKitRouteImport } from './routes/rankings.$kit'
+import { Route as TournamentsTournamentIdRouteImport } from './routes/tournaments.$tournamentId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -24,49 +24,54 @@ const AdminRoute = AdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
-const TournamentsRoute = TournamentsRouteImport.update({
-  id: '/tournaments',
-  path: '/tournaments',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const RankingsKitRoute = RankingsKitRouteImport.update({
   id: '/rankings/$kit',
   path: '/rankings/$kit',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TournamentsTournamentIdRoute = TournamentsTournamentIdRouteImport.update({
+  id: '/tournaments/$tournamentId',
+  path: '/tournaments/$tournamentId',
   getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
-  '/tournaments': typeof TournamentsRoute
   '/rankings/$kit': typeof RankingsKitRoute
+  '/tournaments/$tournamentId': typeof TournamentsTournamentIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
-  '/tournaments': typeof TournamentsRoute
   '/rankings/$kit': typeof RankingsKitRoute
+  '/tournaments/$tournamentId': typeof TournamentsTournamentIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
-  '/tournaments': typeof TournamentsRoute
   '/rankings/$kit': typeof RankingsKitRoute
+  '/tournaments/$tournamentId': typeof TournamentsTournamentIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/admin' | '/tournaments' | '/rankings/$kit'
+  fullPaths: '/' | '/admin' | '/rankings/$kit' | '/tournaments/$tournamentId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/tournaments' | '/rankings/$kit'
-  id: '__root__' | '/' | '/admin' | '/tournaments' | '/rankings/$kit'
+  to: '/' | '/admin' | '/rankings/$kit' | '/tournaments/$tournamentId'
+  id:
+    | '__root__'
+    | '/'
+    | '/admin'
+    | '/rankings/$kit'
+    | '/tournaments/$tournamentId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
-  TournamentsRoute: typeof TournamentsRoute
   RankingsKitRoute: typeof RankingsKitRoute
+  TournamentsTournamentIdRoute: typeof TournamentsTournamentIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -85,18 +90,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/tournaments': {
-      id: '/tournaments'
-      path: '/tournaments'
-      fullPath: '/tournaments'
-      preLoaderRoute: typeof TournamentsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/rankings/$kit': {
       id: '/rankings/$kit'
       path: '/rankings/$kit'
       fullPath: '/rankings/$kit'
       preLoaderRoute: typeof RankingsKitRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tournaments/$tournamentId': {
+      id: '/tournaments/$tournamentId'
+      path: '/tournaments/$tournamentId'
+      fullPath: '/tournaments/$tournamentId'
+      preLoaderRoute: typeof TournamentsTournamentIdRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -105,8 +110,8 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
-  TournamentsRoute: TournamentsRoute,
   RankingsKitRoute: RankingsKitRoute,
+  TournamentsTournamentIdRoute: TournamentsTournamentIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
