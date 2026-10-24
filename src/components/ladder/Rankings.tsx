@@ -5,7 +5,7 @@ import { KitIcon } from "./KitIcon";
 import { ladderQuery, type LadderPlayer } from "@/lib/ladder";
 import {
   KITS, OVERALL_ICON, TIER_POINTS, avatarFallback, avatarUrl,
-  regionClass, tierBadgeClass, tierRingClass, titleFor, kitPoints, isLowerTier,
+  regionClass, tierBadgeClass, tierRingClass, kitPoints, isLowerTier,
 } from "@/lib/kits";
 
 export function Avatar({ p, className }: { p: { username: string; mc_uuid: string | null }; className?: string }) {
@@ -81,7 +81,7 @@ function Row({ p, i, kit }: { p: LadderPlayer; i: number; kit?: string | undefin
       <div className="flex min-w-0 flex-1 flex-col justify-center px-4 py-3 md:w-64 md:flex-none">
         <span className="truncate font-display text-xl font-bold">{p.username}</span>
         <span className="text-xs font-semibold text-muted-foreground">
-          <span className="text-primary">◆</span> {titleFor(p.points)} <span className="opacity-60" title={`Base: ${points - bonus} LP · Bonus: ${bonus > 0 ? "+" : ""}${bonus} LP`}>({points} LP)</span>
+          <span className="text-primary">◆</span> <span title={`Base: ${points - bonus} LP · Bonus: ${bonus > 0 ? "+" : ""}${bonus} LP`}>{points} LP</span>
         </span>
       </div>
       <div className="flex items-center border-x px-4">

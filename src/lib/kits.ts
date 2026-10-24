@@ -62,17 +62,6 @@ export const kitPoints = (tier?: Tier, bonus = 0, lp?: number | null) =>
 export const computePoints = (tiers: Record<string, Tier>, bonuses: Record<string, number> = {}, lp: Record<string, number | null> = {}) =>
   Object.entries(tiers).reduce((sum, [kit, tier]) => sum + kitPoints(tier, bonuses[kit] ?? 0, lp[kit]), 0);
 
-export const TITLES = [
-  { min: 400, name: "Combat Grandmaster" },
-  { min: 250, name: "Combat Master" },
-  { min: 100, name: "Combat Ace" },
-  { min: 50, name: "Combat Specialist" },
-  { min: 20, name: "Combat Cadet" },
-  { min: 10, name: "Combat Novice" },
-  { min: 0, name: "Rookie" },
-];
-
-export const titleFor = (points: number) => TITLES.find((t) => points >= t.min)?.name ?? "Rookie";
 
 export const tierBadgeClass = (tier?: string) => {
   const n = tier?.[2];
