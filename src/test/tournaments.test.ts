@@ -51,6 +51,6 @@ describe("tournament standings", () => {
 
   it("breaks ratio ties by wins", () => {
     const standings = sortByRatio([p("fewer", 4, 2), p("more", 6, 4)]);
-    expect(standings[0].username).toBe("more");
+    expect(standings[0]?.username).toBe("more");
   });
 });
