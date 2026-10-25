@@ -2,6 +2,8 @@ import { describe, expect, it, vi } from "vitest";
 import { ratio, sortByRatio, tournamentQuery, tournamentsQuery, type TournamentPlayer } from "@/lib/tournaments";
 import { supabase } from "@/integrations/supabase/client";
 
+vi.mock("@/integrations/supabase/client", () => ({ supabase: { from: vi.fn() } }));
+
 const p = (username: string, wins: number, losses: number): TournamentPlayer =>
   ({ id: username, username, mc_uuid: null, wins, losses });
 
