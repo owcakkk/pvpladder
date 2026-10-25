@@ -11,10 +11,7 @@ import { ladderQuery } from "@/lib/ladder";
 import {
   addPlayer, lockStaff, removePlayer, staffStatus, unlockStaff, updateRegion,
 } from "@/lib/staff.functions";
-import {
-  addTournamentPlayer, removeTournamentPlayer, setTournamentRecord, setTournamentTitle,
-} from "@/lib/tournaments.functions";
-import { ratio, sortByRatio, tournamentQuery, type TournamentPlayer } from "@/lib/tournaments";
+import { TournamentManager } from "@/components/ladder/TournamentManager";
 import { KITS, REGIONS } from "@/lib/kits";
 
 export const Route = createFileRoute("/admin")({
@@ -62,94 +59,6 @@ function PasswordForm({ onUnlocked }: { onUnlocked: () => void }) {
         <button className={`${btnCls} w-full`} disabled={busy}>{busy ? "Checking…" : "Enter"}</button>
       </form>
     </div>
-  );
-}
-
-function RecordEditor({ p, refresh }: { p: TournamentPlayer; refresh: () => void }) {
-  const save = useServerFn(setTournamentRecord);
-  const [wins, setWins] = useState(p.wins);
-  const [losses, setLosses] = useState(p.losses);
-  const dirty = wins !== p.wins || losses !== p.losses;
-  return (
-    <div className="flex items-center gap-2">
-      <input type="number" min={0} aria-label={`Wins for ${p.username}`} className={`${inputCls} w-20`} value={wins}
-        onChange={(e) => setWins(Math.max(0, Math.floor(Number(e.target.value) || 0)))} />
-      <span className="text-muted-foreground">:</span>
-      <input type="number" min={0} aria-label={`Losses for ${p.username}`} className={`${inputCls} w-20`} value={losses}
-        onChange={(e) => setLosses(Math.max(0, Math.floor(Number(e.target.value) || 0)))} />
-      <button className={btnCls} disabled={!dirty}
-        onClick={async () => {
-          try { await save({ data: { playerId: p.id, wins, losses } }); refresh(); toast.success(`Saved ${p.username}`); }
-          catch (err) { toast.error(errMsg(err)); }
-        }}>
-        Save
-      </button>
-    </div>
-  );
-}
-
-function TournamentSection() {
-  const qc = useQueryClient();
-  const { data: tournament } = useQuery(tournamentQuery);
-  const saveTitle = useServerFn(setTournamentTitle);
-  const addTp = useServerFn(addTournamentPlayer);
-  const delTp = useServerFn(removeTournamentPlayer);
-  const [title, setTitle] = useState<string | null>(null);
-  const [name, setName] = useState("");
-  const [busy, setBusy] = useState(false);
-  const refresh = () => qc.invalidateQueries({ queryKey: ["tournament"] });
-  const players = tournament ? sortByRatio(tournament.players) : [];
-  const titleValue = title ?? tournament?.title ?? "";
-
-  return (
-    <section className="rounded-xl border bg-panel p-5">
-      <h2 className="mb-3 font-display text-xl font-bold">Tournament</h2>
-      <form className="mb-4 flex flex-wrap gap-3" onSubmit={async (e) => {
-        e.preventDefault();
-        try { await saveTitle({ data: { title: titleValue } }); setTitle(null); await refresh(); toast.success("Title saved"); }
-        catch (err) { toast.error(errMsg(err)); }
-      }}>
-        <input className={`${inputCls} max-w-xs`} placeholder="Tournament title" value={titleValue}
-          onChange={(e) => setTitle(e.target.value)} required maxLength={80} />
-        <button className={btnCls}>Save title</button>
-      </form>
-      <form className="mb-4 flex flex-wrap gap-3" onSubmit={async (e) => {
-        e.preventDefault(); setBusy(true);
-        try {
-          const r = await addTp({ data: { username: name } });
-          toast.success(`Registered ${r.username}`); setName(""); await refresh();
-        } catch (err) { toast.error(errMsg(err)); }
-        setBusy(false);
-      }}>
-        <input className={`${inputCls} max-w-xs`} placeholder="Minecraft username" value={name}
-          onChange={(e) => setName(e.target.value)} required />
-        <button className={btnCls} disabled={busy || players.length >= 10}>
-          {busy ? "Looking up…" : `Register player (${players.length}/10)`}
-        </button>
-      </form>
-      <div className="space-y-2">
-        {players.map((p, i) => (
-          <div key={`${p.id}-${p.wins}-${p.losses}`} className="flex flex-wrap items-center gap-3 rounded-lg border bg-row p-3">
-            <span className="w-6 font-display font-bold text-muted-foreground">{i + 1}</span>
-            <Avatar p={p} className="h-8" />
-            <span className="font-semibold">{p.username}</span>
-            <span className="text-sm text-muted-foreground">ratio {ratio(p) > 0 ? `+${ratio(p)}` : ratio(p)}</span>
-            <div className="ml-auto flex items-center gap-3">
-              <RecordEditor p={p} refresh={refresh} />
-              <button aria-label={`Remove ${p.username}`} className="text-muted-foreground hover:text-destructive"
-                onClick={async () => {
-                  if (!confirm(`Remove ${p.username} from the tournament?`)) return;
-                  try { await delTp({ data: { playerId: p.id } }); await refresh(); }
-                  catch (err) { toast.error(errMsg(err)); }
-                }}>
-                <Trash2 className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-        ))}
-        {players.length === 0 && <p className="text-sm text-muted-foreground">No players registered yet.</p>}
-      </div>
-    </section>
   );
 }
 
@@ -227,7 +136,7 @@ function AdminPanel() {
         </div>
       </section>
 
-      <TournamentSection />
+      <TournamentManager />
     </main>
   );
 }
