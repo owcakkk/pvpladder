@@ -9,5 +9,5 @@
 # Tournaments
 - [x] Tournaments page with round-robin standings (ratio = wins − losses, top 3 earn HT3).
 - [x] Staff panel: tournament title, register up to 10 players, edit wins/losses, remove players.
-- [ ] Finish multiple tournaments: dropdown, overview/detail pages, staff create/switch/delete controls.
-- [ ] Verify independent rosters and saved tournament changes end to end.
+- [x] Finish multiple tournaments: dropdown, overview/detail pages, staff create/switch/delete controls.
+- [x] Verify independent rosters and saved tournament changes end to end.
