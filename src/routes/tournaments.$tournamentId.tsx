@@ -9,9 +9,9 @@ import { tierBadgeClass } from "@/lib/kits";
 export const Route = createFileRoute("/tournaments/$tournamentId")({
   head: () => ({
     meta: [
-      { title: "Tournaments — PvP Ladder" },
+      { title: "Tournament Standings — PvP Ladder" },
       { name: "description", content: "PvP Ladder round-robin tournament standings — everyone battles everyone, top 3 earn HT3." },
-      { property: "og:title", content: "Tournaments — PvP Ladder" },
+      { property: "og:title", content: "Tournament Standings — PvP Ladder" },
       { property: "og:description", content: "Round-robin tournament standings on PvP Ladder." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -24,7 +24,8 @@ const medal = (rank: number) =>
   rank === 0 ? "text-gold" : rank === 1 ? "text-silver" : rank === 2 ? "text-bronze" : "text-muted-foreground";
 
 function TournamentsPage() {
-  const { data: tournament, isLoading } = useQuery(tournamentQuery);
+  const { tournamentId } = Route.useParams();
+  const { data: tournament, isLoading, error } = useQuery(tournamentQuery(tournamentId));
   const players = tournament ? sortByRatio(tournament.players) : [];
 
   return (
@@ -34,13 +35,17 @@ function TournamentsPage() {
         <section className="rounded-xl border bg-panel p-6">
           <div className="mb-1 flex items-center gap-3">
             <Trophy className="h-6 w-6 text-primary" />
-            <h1 className="font-display text-2xl font-bold">{tournament?.title ?? "Tournament"}</h1>
+            <h1 className="min-w-0 break-words font-display text-2xl font-bold">{tournament?.title ?? "Tournament"}</h1>
           </div>
           <p className="mb-5 text-sm text-muted-foreground">
             Round-robin: every player battles every other player. Ratio = wins − losses. The top 3 earn an HT3 tier.
           </p>
           {isLoading ? (
             <p className="py-8 text-center text-muted-foreground">Loading…</p>
+          ) : error ? (
+            <p className="py-8 text-center text-destructive">Couldn't load tournament.</p>
+          ) : !tournament ? (
+            <p className="py-8 text-center text-muted-foreground">Tournament not found.</p>
           ) : players.length === 0 ? (
             <p className="py-8 text-center text-muted-foreground">No players registered yet — check back soon.</p>
           ) : (

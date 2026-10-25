@@ -21,8 +21,9 @@ export const sortByRatio = (players: TournamentPlayer[]) =>
 export const tournamentsQuery = queryOptions({
   queryKey: ["tournaments"],
   queryFn: async (): Promise<TournamentSummary[]> => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("tournaments").select("id, title").order("created_at", { ascending: false });
+    if (error) throw new Error("Couldn't load tournaments");
     return data ?? [];
   },
 });
@@ -30,11 +31,13 @@ export const tournamentsQuery = queryOptions({
 export const tournamentQuery = (id: string) => queryOptions({
   queryKey: ["tournament", id],
   queryFn: async (): Promise<Tournament | null> => {
-    const { data: t } = await supabase
+    const { data: t, error } = await supabase
       .from("tournaments").select("id, title").eq("id", id).maybeSingle();
+    if (error) throw new Error("Couldn't load tournament");
     if (!t) return null;
-    const { data: players } = await supabase
+    const { data: players, error: playersError } = await supabase
       .from("tournament_players").select("id, username, mc_uuid, wins, losses").eq("tournament_id", t.id);
+    if (playersError) throw new Error("Couldn't load tournament players");
     return { id: t.id, title: t.title, players: players ?? [] };
   },
 });
