@@ -5,7 +5,7 @@ import { Header } from "./Header";
 import { Avatar } from "./Rankings";
 import { ladderQuery, type LadderPlayer } from "@/lib/ladder";
 import {
-  KITS, KitIcon, isLowerTier, kitPoints, regionClass, tierBadgeClass, tierRank, type Tier,
+  KITS, KitIcon, isLowerTier, kitPoints, regionClass, tierBadgeClass, tierRingClass, type Tier,
 } from "@/lib/kits";
 
 function KitCard({ kitId, tier, bonus, lp }: { kitId: string; tier?: Tier; bonus: number; lp: number | null }) {
@@ -15,7 +15,7 @@ function KitCard({ kitId, tier, bonus, lp }: { kitId: string; tier?: Tier; bonus
   return (
     <div className="flex items-center justify-between gap-3 rounded-lg border bg-row px-4 py-3">
       <div className="flex min-w-0 items-center gap-3">
-        <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-full bg-background ring-2 ${tier ? tierBadgeRing(tier) : "ring-low opacity-50"}`}>
+        <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-full bg-background ring-2 ${tier ? tierRingClass(tier) : "ring-low opacity-50"}`}>
           <KitIcon kit={k} className={`h-5 w-5 ${k.tone}`} />
         </span>
         <div className="min-w-0">
@@ -41,13 +41,10 @@ function KitCard({ kitId, tier, bonus, lp }: { kitId: string; tier?: Tier; bonus
   );
 }
 
-const tierBadgeRing = (tier: string) =>
-  tier[2] === "1" ? "ring-gold" : tier[2] === "2" ? "ring-silver" : tier[2] === "3" ? "ring-bronze" : "ring-low";
-
 export function PlayerProfile({ player }: { player: LadderPlayer }) {
   const ranked = KITS
     .filter((k) => player.tiers[k.id])
-    .sort((a, b) => tierRank(player.tiers[a.id]) - tierRank(player.tiers[b.id]));
+    .sort((a, b) => tierRankOf(player.tiers[a.id]) - tierRankOf(player.tiers[b.id]));
   const unranked = KITS.filter((k) => !player.tiers[k.id]);
 
   return (
@@ -88,19 +85,15 @@ export function PlayerProfile({ player }: { player: LadderPlayer }) {
   );
 }
 
-export function PlayerProfilePage() {
+// Same ordering as the rankings chips: TIERS is listed highest → lowest, so the
+// array index is the rank.
+function tierRankOf(tier?: string) {
+  return tier ? ["HT1", "LT1", "HT2", "LT2", "HT3", "LT3", "HT4", "LT4", "HT5", "LT5"].indexOf(tier) : 99;
+}
+
+export function PlayerProfilePage({ playerId }: { playerId: string }) {
   const { data: players } = useSuspenseQuery(ladderQuery);
-  const { playerId } = playersRouteParams();
   const player = players.find((p) => p.id === playerId);
   if (!player) return <p className="py-16 text-center text-muted-foreground">Player not found.</p>;
   return <PlayerProfile player={player} />;
-}
-
-function playersRouteParams() {
-  return { playerId: useParamsId() };
-}
-
-import { useParams } from "@tanstack/react-router";
-function useParamsId() {
-  return useParams({ strict: false })["playerId"] as string | undefined;
 }
