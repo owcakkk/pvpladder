@@ -2,13 +2,14 @@ import { Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
 import { Header } from "./Header";
+import { KitIcon } from "./KitIcon";
 import { Avatar } from "./Rankings";
 import { ladderQuery, type LadderPlayer } from "@/lib/ladder";
 import {
-  KITS, KitIcon, isLowerTier, kitPoints, regionClass, tierBadgeClass, tierRank, tierRingClass, type Tier,
+  KITS, isLowerTier, kitPoints, regionClass, tierBadgeClass, tierRank, tierRingClass, type Tier,
 } from "@/lib/kits";
 
-function KitCard({ kitId, tier, bonus, lp }: { kitId: string; tier?: Tier; bonus: number; lp: number | null }) {
+function KitCard({ kitId, tier, bonus, lp }: { kitId: string; tier?: Tier | undefined; bonus: number; lp: number | null }) {
   const k = KITS.find((x) => x.id === kitId);
   if (!k) return null;
   const points = kitPoints(tier, tier && !isLowerTier(tier) ? bonus : 0, lp);
