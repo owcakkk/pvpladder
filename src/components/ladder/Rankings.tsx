@@ -4,7 +4,7 @@ import { Header } from "./Header";
 import { KitIcon } from "./KitIcon";
 import { ladderQuery, type LadderPlayer } from "@/lib/ladder";
 import {
-  KITS, OVERALL_ICON, TIER_POINTS, avatarFallback, avatarUrl,
+  KITS, OVERALL_ICON, avatarFallback, avatarUrl,
   regionClass, tierBadgeClass, tierRingClass, kitPoints, isLowerTier,
   tierRank, bestTierRank,
 } from "@/lib/kits";
