@@ -74,7 +74,11 @@ function Row({ p, i, kit }: { p: LadderPlayer; i: number; kit?: string | undefin
   const sorted = Object.entries(p.tiers).sort((a, b) => tierRank(a[1]) - tierRank(b[1]));
   const unranked = KITS.filter((k) => !p.tiers[k.id]).map((k) => [k.id, undefined] as const);
   return (
-    <div className="flex items-stretch overflow-hidden rounded-lg border bg-row">
+    <Link
+      to="/players/$playerId"
+      params={{ playerId: p.id }}
+      className="group flex items-stretch overflow-hidden rounded-lg border bg-row transition-colors hover:bg-accent"
+    >
       <div className={`relative flex w-32 shrink-0 items-center rank-slant ${rankBg(i)}`}>
         <span className="pl-4 font-display text-3xl font-black italic text-foreground drop-shadow">{i + 1}.</span>
         <Avatar p={p} className="absolute bottom-0 right-5 h-14" />
@@ -95,7 +99,7 @@ function Row({ p, i, kit }: { p: LadderPlayer; i: number; kit?: string | undefin
           [...sorted, ...unranked].map(([k, t]) => <TierChip key={k} kitId={k} tier={t} />)
         )}
       </div>
-    </div>
+    </Link>
   );
 }
 
