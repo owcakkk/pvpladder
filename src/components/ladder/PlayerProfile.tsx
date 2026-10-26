@@ -43,9 +43,11 @@ function KitCard({ kitId, tier, bonus, lp }: { kitId: string; tier?: Tier | unde
 }
 
 export function PlayerProfile({ player }: { player: LadderPlayer }) {
+  const byTier = compareKitsByTier(player.tiers, player.bonuses, player.tierLP);
   const ranked = KITS
     .filter((k) => player.tiers[k.id])
-    .sort(compareKitsByTier(player.tiers, player.bonuses, player.tierLP));
+    .sort((a, b) => byTier(a.id, b.id));
+
 
   const unranked = KITS.filter((k) => !player.tiers[k.id]);
 
