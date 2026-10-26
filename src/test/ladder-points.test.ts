@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bestTierRank, computePoints, DEFENCE_POINTS, kitPoints, TIER_POINTS, tierRank, type Tier } from "@/lib/kits";
+import { bestTierPoints, bestTierRank, compareKitsByTier, computePoints, DEFENCE_POINTS, kitPoints, TIER_POINTS, tierRank, type Tier } from "@/lib/kits";
 
 describe("Ladder points", () => {
   it.each([ ["HT3", 600], ["LT2", 800], ["HT2", 1000], ["LT1", 1300], ["HT1", 1600] ] as const)
@@ -32,5 +32,20 @@ describe("Tier ordering", () => {
   });
   it("sorts an unranked player after every ranked one", () => {
     expect(bestTierRank({})).toBe(tierRank(undefined));
+  });
+});
+
+describe("Tier LP tie-breaks", () => {
+  it("orders two LT3 kits by their tier LP, highest first", () => {
+    const tiers = { axe: "LT3", mace: "LT3" } as Record<string, Tier>;
+    expect(compareKitsByTier(tiers, {}, { axe: 330, mace: 320 })("axe", "mace")).toBeLessThan(0);
+  });
+  it("keeps a higher tier above a lower one even when the lower one has more LP", () => {
+    const tiers = { axe: "LT3", sword: "HT4" } as Record<string, Tier>;
+    expect(compareKitsByTier(tiers, {}, { axe: 330, sword: 349 })("axe", "sword")).toBeLessThan(0);
+  });
+  it("breaks an overall LP tie with the LP of the best tier", () => {
+    const tiers = { axe: "LT3" } as Record<string, Tier>;
+    expect(bestTierPoints(tiers, {}, { axe: 330 })).toBeGreaterThan(bestTierPoints(tiers, {}, { axe: 320 }));
   });
 });

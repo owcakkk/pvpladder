@@ -79,6 +79,36 @@ export const bestTierRank = (tiers: Record<string, string>) => {
   return values.length ? Math.min(...values) : TIERS.length;
 };
 
+// LP a player earned in one kit's tier (tier LP for LT3-LT5, tier value + bonus for HT3+).
+export const kitEntryPoints = (
+  tiers: Record<string, string>,
+  bonuses: Record<string, number> = {},
+  lp: Record<string, number | null> = {},
+  kit: string,
+) => kitPoints(tiers[kit] as Tier | undefined, bonuses[kit] ?? 0, lp[kit]);
+
+// Sort kits by tier first, then by the LP earned inside that tier (LT3 330 above LT3 320).
+export const compareKitsByTier =
+  (tiers: Record<string, string>, bonuses: Record<string, number> = {}, lp: Record<string, number | null> = {}) =>
+  (a: string, b: string) =>
+    tierRank(tiers[a]) - tierRank(tiers[b])
+    || kitEntryPoints(tiers, bonuses, lp, b) - kitEntryPoints(tiers, bonuses, lp, a);
+
+// LP of a player's best tier — the tie-break when two players share a total.
+export const bestTierPoints = (
+  tiers: Record<string, string>,
+  bonuses: Record<string, number> = {},
+  lp: Record<string, number | null> = {},
+) => {
+  const best = bestTierRank(tiers);
+  if (best === TIERS.length) return 0;
+  const tier = TIERS[best];
+  return Object.entries(tiers)
+    .filter(([, t]) => t === tier)
+    .reduce((max, [kit]) => Math.max(max, kitEntryPoints(tiers, bonuses, lp, kit)), 0);
+};
+
+
 export const tierRingClass = (tier?: string) => {
   const n = tier?.[2];
   if (n === "1") return "ring-gold";

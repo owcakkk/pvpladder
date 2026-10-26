@@ -6,8 +6,9 @@ import { ladderQuery, type LadderPlayer } from "@/lib/ladder";
 import {
   KITS, OVERALL_ICON, avatarFallback, avatarUrl,
   regionClass, tierBadgeClass, tierRingClass, kitPoints, isLowerTier,
-  tierRank, bestTierRank,
+  bestTierRank, bestTierPoints, compareKitsByTier,
 } from "@/lib/kits";
+
 
 export function Avatar({ p, className }: { p: { username: string; mc_uuid: string | null }; className?: string }) {
   return (
@@ -71,7 +72,9 @@ function rankBg(i: number) {
 function Row({ p, i, kit }: { p: LadderPlayer; i: number; kit?: string | undefined }) {
   const points = kit ? kitPoints(p.tiers[kit], p.bonuses[kit] ?? 0, p.tierLP[kit]) : p.points;
   const bonus = kit ? (isLowerTier(p.tiers[kit]) ? 0 : p.bonuses[kit] ?? 0) : Object.entries(p.bonuses).reduce((sum, [id, value]) => sum + (isLowerTier(p.tiers[id]) ? 0 : value), 0);
-  const sorted = Object.entries(p.tiers).sort((a, b) => tierRank(a[1]) - tierRank(b[1]));
+  const byTier = compareKitsByTier(p.tiers, p.bonuses, p.tierLP);
+  const sorted = Object.entries(p.tiers).sort((a, b) => byTier(a[0], b[0]));
+
   const unranked = KITS.filter((k) => !p.tiers[k.id]).map((k) => [k.id, undefined] as const);
   return (
     <Link
@@ -111,7 +114,9 @@ export function Rankings({ kit, q }: { kit?: string | undefined; q?: string | un
   } else list = [...list].sort((a, b) =>
     b.points - a.points
     || bestTierRank(a.tiers) - bestTierRank(b.tiers)
+    || bestTierPoints(b.tiers, b.bonuses, b.tierLP) - bestTierPoints(a.tiers, a.bonuses, a.tierLP)
     || a.username.localeCompare(b.username));
+
   const ranked = list.map((p, i) => ({ p, i }));
   const shown = q ? ranked.filter(({ p }) => p.username.toLowerCase().includes(q.toLowerCase())) : ranked;
 
