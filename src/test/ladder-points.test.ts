@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { computePoints, DEFENCE_POINTS, kitPoints, TIER_POINTS } from "@/lib/kits";
+import { bestTierRank, computePoints, DEFENCE_POINTS, kitPoints, TIER_POINTS, tierRank, type Tier } from "@/lib/kits";
 
 describe("Ladder points", () => {
   it.each([ ["HT3", 600], ["LT2", 800], ["HT2", 1000], ["LT1", 1300], ["HT1", 1600] ] as const)
