@@ -5,7 +5,7 @@ import { Header } from "./Header";
 import { Avatar } from "./Rankings";
 import { ladderQuery, type LadderPlayer } from "@/lib/ladder";
 import {
-  KITS, KitIcon, isLowerTier, kitPoints, regionClass, tierBadgeClass, tierRingClass, type Tier,
+  KITS, KitIcon, isLowerTier, kitPoints, regionClass, tierBadgeClass, tierRank, tierRingClass, type Tier,
 } from "@/lib/kits";
 
 function KitCard({ kitId, tier, bonus, lp }: { kitId: string; tier?: Tier; bonus: number; lp: number | null }) {
@@ -44,7 +44,7 @@ function KitCard({ kitId, tier, bonus, lp }: { kitId: string; tier?: Tier; bonus
 export function PlayerProfile({ player }: { player: LadderPlayer }) {
   const ranked = KITS
     .filter((k) => player.tiers[k.id])
-    .sort((a, b) => tierRankOf(player.tiers[a.id]) - tierRankOf(player.tiers[b.id]));
+    .sort((a, b) => tierRank(player.tiers[a.id]) - tierRank(player.tiers[b.id]));
   const unranked = KITS.filter((k) => !player.tiers[k.id]);
 
   return (
@@ -83,12 +83,6 @@ export function PlayerProfile({ player }: { player: LadderPlayer }) {
       </main>
     </div>
   );
-}
-
-// Same ordering as the rankings chips: TIERS is listed highest → lowest, so the
-// array index is the rank.
-function tierRankOf(tier?: string) {
-  return tier ? ["HT1", "LT1", "HT2", "LT2", "HT3", "LT3", "HT4", "LT4", "HT5", "LT5"].indexOf(tier) : 99;
 }
 
 export function PlayerProfilePage({ playerId }: { playerId: string }) {
