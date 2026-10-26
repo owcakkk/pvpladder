@@ -6,7 +6,7 @@ import { KitIcon } from "./KitIcon";
 import { Avatar } from "./Rankings";
 import { ladderQuery, type LadderPlayer } from "@/lib/ladder";
 import {
-  KITS, isLowerTier, kitPoints, regionClass, tierBadgeClass, tierRank, tierRingClass, type Tier,
+  KITS, compareKitsByTier, isLowerTier, kitPoints, regionClass, tierBadgeClass, tierRingClass, type Tier,
 } from "@/lib/kits";
 
 function KitCard({ kitId, tier, bonus, lp }: { kitId: string; tier?: Tier | undefined; bonus: number; lp: number | null }) {
@@ -45,7 +45,8 @@ function KitCard({ kitId, tier, bonus, lp }: { kitId: string; tier?: Tier | unde
 export function PlayerProfile({ player }: { player: LadderPlayer }) {
   const ranked = KITS
     .filter((k) => player.tiers[k.id])
-    .sort((a, b) => tierRank(player.tiers[a.id]) - tierRank(player.tiers[b.id]));
+    .sort(compareKitsByTier(player.tiers, player.bonuses, player.tierLP));
+
   const unranked = KITS.filter((k) => !player.tiers[k.id]);
 
   return (
