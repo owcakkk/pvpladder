@@ -19,3 +19,18 @@ describe("Ladder points", () => {
     expect(computePoints({}, { sword: 50 })).toBe(0);
   });
 });
+
+describe("Tier ordering", () => {
+  it("ranks HT1 above HT3 and orders lower tiers LT3 before LT5", () => {
+    expect(tierRank("HT1")).toBeLessThan(tierRank("HT3"));
+    expect(tierRank("LT3")).toBeLessThan(tierRank("LT5"));
+  });
+  it("breaks overall LP ties by the player's best tier", () => {
+    const higher: Record<string, Tier> = { sword: "HT3" };
+    const lower: Record<string, Tier> = { sword: "LT5" };
+    expect(bestTierRank(higher)).toBeLessThan(bestTierRank(lower));
+  });
+  it("sorts an unranked player after every ranked one", () => {
+    expect(bestTierRank({})).toBe(tierRank(undefined));
+  });
+});
