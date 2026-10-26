@@ -19,4 +19,8 @@ describe("App routing", () => {
 
     expect(matches.at(-1)?.routeId).not.toBe(rootRouteId);
   });
+  it("matches a player profile page for /players/:id", () => {
+    const router = createRouter({ routeTree, context: { queryClient: new QueryClient() } });
+    expect(router.matchRoutes("/players/some-uuid").at(-1)?.routeId).toBe("/players/$playerId");
+  });
 });

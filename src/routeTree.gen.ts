@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as TournamentsRouteImport } from './routes/tournaments'
+import { Route as PlayersPlayerIdRouteImport } from './routes/players.$playerId'
 import { Route as RankingsKitRouteImport } from './routes/rankings.$kit'
 import { Route as TournamentsIndexRouteImport } from './routes/tournaments.index'
 import { Route as TournamentsTournamentIdRouteImport } from './routes/tournaments.$tournamentId'
@@ -29,6 +30,11 @@ const AdminRoute = AdminRouteImport.update({
 const TournamentsRoute = TournamentsRouteImport.update({
   id: '/tournaments',
   path: '/tournaments',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlayersPlayerIdRoute = PlayersPlayerIdRouteImport.update({
+  id: '/players/$playerId',
+  path: '/players/$playerId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RankingsKitRoute = RankingsKitRouteImport.update({
@@ -51,6 +57,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/tournaments': typeof TournamentsRouteWithChildren
+  '/players/$playerId': typeof PlayersPlayerIdRoute
   '/rankings/$kit': typeof RankingsKitRoute
   '/tournaments/$tournamentId': typeof TournamentsTournamentIdRoute
   '/tournaments/': typeof TournamentsIndexRoute
@@ -58,6 +65,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/players/$playerId': typeof PlayersPlayerIdRoute
   '/rankings/$kit': typeof RankingsKitRoute
   '/tournaments/$tournamentId': typeof TournamentsTournamentIdRoute
   '/tournaments': typeof TournamentsIndexRoute
@@ -67,6 +75,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/tournaments': typeof TournamentsRouteWithChildren
+  '/players/$playerId': typeof PlayersPlayerIdRoute
   '/rankings/$kit': typeof RankingsKitRoute
   '/tournaments/$tournamentId': typeof TournamentsTournamentIdRoute
   '/tournaments/': typeof TournamentsIndexRoute
@@ -77,6 +86,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/tournaments'
+    | '/players/$playerId'
     | '/rankings/$kit'
     | '/tournaments/$tournamentId'
     | '/tournaments/'
@@ -84,6 +94,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/admin'
+    | '/players/$playerId'
     | '/rankings/$kit'
     | '/tournaments/$tournamentId'
     | '/tournaments'
@@ -92,6 +103,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/tournaments'
+    | '/players/$playerId'
     | '/rankings/$kit'
     | '/tournaments/$tournamentId'
     | '/tournaments/'
@@ -101,6 +113,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   TournamentsRoute: typeof TournamentsRouteWithChildren
+  PlayersPlayerIdRoute: typeof PlayersPlayerIdRoute
   RankingsKitRoute: typeof RankingsKitRoute
 }
 
@@ -125,6 +138,13 @@ declare module '@tanstack/react-router' {
       path: '/tournaments'
       fullPath: '/tournaments'
       preLoaderRoute: typeof TournamentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/players/$playerId': {
+      id: '/players/$playerId'
+      path: '/players/$playerId'
+      fullPath: '/players/$playerId'
+      preLoaderRoute: typeof PlayersPlayerIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/rankings/$kit': {
@@ -169,6 +189,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   TournamentsRoute: TournamentsRouteWithChildren,
+  PlayersPlayerIdRoute: PlayersPlayerIdRoute,
   RankingsKitRoute: RankingsKitRoute,
 }
 export const routeTree = rootRouteImport
