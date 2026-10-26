@@ -4,6 +4,7 @@
 - [x] Test score rules and verify saved adjustments in the rankings.
 - [x] Replace fixed lower-tier awards with staff-entered per-kit LP and validate tier ranges.
 - [x] Remove Information and verify saved per-kit LP in rankings.
+- [x] Overall ladder: sort by LP with best-tier tie-break; order tier chips highest→lowest (LT3→LT5 for lower tiers).
 - [ ] Full lower-tier skill categories and LP/CF split: awaiting category definitions.
 
 # Tournaments
