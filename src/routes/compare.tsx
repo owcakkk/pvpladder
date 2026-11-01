@@ -4,8 +4,8 @@ import { ladderQuery } from "@/lib/ladder";
 
 export const Route = createFileRoute("/compare")({
   validateSearch: (search: Record<string, unknown>) => ({
-    a: typeof search.a === "string" ? search.a : undefined,
-    b: typeof search.b === "string" ? search.b : undefined,
+    a: typeof search["a"] === "string" ? search["a"] : undefined,
+    b: typeof search["b"] === "string" ? search["b"] : undefined,
   }),
   loader: ({ context }) => context.queryClient.ensureQueryData(ladderQuery),
   head: () => ({

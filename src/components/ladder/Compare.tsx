@@ -87,7 +87,7 @@ function OverallCard({ p, leading, gap }: { p?: LadderPlayer; leading: boolean; 
   );
 }
 
-export function ComparePage({ a, b }: { a?: string; b?: string }) {
+export function ComparePage({ a, b }: { a?: string | undefined; b?: string | undefined }) {
   const { data: players } = useSuspenseQuery(ladderQuery);
   const navigate = useNavigate();
   const pa = players.find((p) => p.id === a);
