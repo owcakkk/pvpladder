@@ -8,7 +8,7 @@ import {
   KITS, isLowerTier, kitPoints, regionClass, tierBadgeClass, tierRingClass, type Tier,
 } from "@/lib/kits";
 
-function Side({ p, kitId, winner, reverse }: { p?: LadderPlayer; kitId: string; winner: boolean; reverse?: boolean }) {
+function Side({ p, kitId, winner, reverse }: { p?: LadderPlayer | undefined; kitId: string; winner: boolean; reverse?: boolean }) {
   const k = KITS.find((x) => x.id === kitId)!;
   const tier = p?.tiers[kitId] as Tier | undefined;
   const bonus = tier && !isLowerTier(tier) ? p?.bonuses[kitId] ?? 0 : 0;
@@ -41,9 +41,9 @@ function Side({ p, kitId, winner, reverse }: { p?: LadderPlayer; kitId: string; 
   );
 }
 
-function KitRow({ kitId, p1, p2 }: { kitId: string; p1?: LadderPlayer; p2?: LadderPlayer }) {
+function KitRow({ kitId, p1, p2 }: { kitId: string; p1?: LadderPlayer | undefined; p2?: LadderPlayer | undefined }) {
   const k = KITS.find((x) => x.id === kitId)!;
-  const val = (p?: LadderPlayer) => (p ? kitPoints(p.tiers[kitId] as Tier | undefined, p.bonuses[kitId] ?? 0, p.tierLP[kitId]) : null);
+  const val = (p: LadderPlayer | undefined) => (p ? kitPoints(p.tiers[kitId] as Tier | undefined, p.bonuses[kitId] ?? 0, p.tierLP[kitId]) : null);
   const v1 = val(p1);
   const v2 = val(p2);
   const winner1 = v1 != null && (v2 == null || v1 > v2);
@@ -65,7 +65,7 @@ function KitRow({ kitId, p1, p2 }: { kitId: string; p1?: LadderPlayer; p2?: Ladd
   );
 }
 
-function OverallCard({ p, leading, gap }: { p?: LadderPlayer; leading: boolean; gap: number }) {
+function OverallCard({ p, leading, gap }: { p?: LadderPlayer | undefined; leading: boolean; gap: number }) {
   return (
     <div className={`flex min-w-0 flex-1 items-center gap-3 rounded-xl border bg-row p-4 ${leading ? "ring-2 ring-gold" : ""}`}>
       {p ? (

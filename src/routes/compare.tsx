@@ -3,10 +3,12 @@ import { ComparePage } from "@/components/ladder/Compare";
 import { ladderQuery } from "@/lib/ladder";
 
 export const Route = createFileRoute("/compare")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    a: typeof search["a"] === "string" ? search["a"] : undefined,
-    b: typeof search["b"] === "string" ? search["b"] : undefined,
-  }),
+  validateSearch: (search: Record<string, unknown>) => {
+    const out: { a?: string; b?: string } = {};
+    if (typeof search["a"] === "string") out.a = search["a"];
+    if (typeof search["b"] === "string") out.b = search["b"];
+    return out;
+  },
   loader: ({ context }) => context.queryClient.ensureQueryData(ladderQuery),
   head: () => ({
     meta: [
