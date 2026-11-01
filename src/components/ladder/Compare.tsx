@@ -1,4 +1,5 @@
-import { useNavigate, useSuspenseQuery } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { Swords } from "lucide-react";
 import { Header } from "./Header";
 import { KitIcon } from "./KitIcon";
