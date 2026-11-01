@@ -23,4 +23,8 @@ describe("App routing", () => {
     const router = createRouter({ routeTree, context: { queryClient: new QueryClient() } });
     expect(router.matchRoutes("/players/some-uuid").at(-1)?.routeId).toBe("/players/$playerId");
   });
+  it("matches the comparison page for /compare", () => {
+    const router = createRouter({ routeTree, context: { queryClient: new QueryClient() } });
+    expect(router.matchRoutes("/compare").at(-1)?.routeId).toBe("/compare");
+  });
 });

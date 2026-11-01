@@ -19,6 +19,7 @@ export function Header() {
       </Link>
       <nav className="order-3 flex w-full items-center justify-center gap-6 text-sm md:order-none md:w-auto">
         <Link to="/" className="text-muted-foreground hover:text-foreground" activeProps={{ className: "text-foreground" }}>Rankings</Link>
+        <Link to="/compare" className="text-muted-foreground hover:text-foreground" activeProps={{ className: "text-foreground" }}>Compare</Link>
         <DropdownMenu>
           <DropdownMenuTrigger asChild><Button variant="ghost" className="h-auto p-0 text-muted-foreground hover:bg-transparent hover:text-foreground">
             Tournaments <ChevronDown className="h-3.5 w-3.5" />

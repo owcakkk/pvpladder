@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Swords } from "lucide-react";
 import { Header } from "./Header";
 import { KitIcon } from "./KitIcon";
 import { Avatar } from "./Rankings";
@@ -55,9 +55,14 @@ export function PlayerProfile({ player }: { player: LadderPlayer }) {
     <div className="min-h-screen px-4 pb-16">
       <Header />
       <main className="mx-auto mt-8 max-w-5xl">
-        <Link to="/" className="mb-3 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="h-4 w-4" /> Back to rankings
-        </Link>
+        <div className="mb-3 flex flex-wrap items-center gap-4 text-sm">
+          <Link to="/" className="inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="h-4 w-4" /> Back to rankings
+          </Link>
+          <Link to="/compare" search={{ a: player.id }} className="inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground">
+            <Swords className="h-4 w-4" /> Compare with another player
+          </Link>
+        </div>
         <section className="rounded-xl border bg-panel p-6">
           <div className="flex flex-wrap items-center gap-5">
             <Avatar p={player} className="h-28 shrink-0" />
