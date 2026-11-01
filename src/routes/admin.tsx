@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Lock, Trash2 } from "lucide-react";
+import { Lock, Trash2, Swords, Trophy } from "lucide-react";
 import { Header } from "@/components/ladder/Header";
 import { TierEditor } from "@/components/ladder/TierEditor";
 import { Avatar } from "@/components/ladder/Rankings";
@@ -12,6 +12,7 @@ import {
   addPlayer, lockStaff, removePlayer, staffStatus, unlockStaff, updateRegion,
 } from "@/lib/staff.functions";
 import { TournamentManager } from "@/components/ladder/TournamentManager";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { KITS, REGIONS } from "@/lib/kits";
 
 export const Route = createFileRoute("/admin")({
@@ -91,7 +92,17 @@ function AdminPanel() {
     .filter((p) => p.username.toLowerCase().includes(filter.toLowerCase()));
 
   return (
-    <main className="mx-auto mt-6 max-w-6xl space-y-6">
+    <main className="mx-auto mt-6 max-w-6xl">
+      <Tabs defaultValue="tiers">
+        <TabsList aria-label="Staff panel sections" className="mb-4 grid h-11 w-full grid-cols-2 sm:max-w-sm">
+          <TabsTrigger value="tiers" className="h-full gap-2 data-[state=active]:text-primary">
+            <Swords className="h-4 w-4" /> Tier Assign
+          </TabsTrigger>
+          <TabsTrigger value="tournaments" className="h-full gap-2 data-[state=active]:text-primary">
+            <Trophy className="h-4 w-4" /> Tournaments
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="tiers" forceMount className="space-y-6 data-[state=inactive]:hidden">
       <section className="rounded-xl border bg-panel p-5">
         <h2 className="mb-3 font-display text-xl font-bold">Add player</h2>
         <form onSubmit={onAdd} className="flex flex-wrap gap-3">
@@ -136,7 +147,11 @@ function AdminPanel() {
         </div>
       </section>
 
-      <TournamentManager />
+        </TabsContent>
+        <TabsContent value="tournaments" forceMount className="data-[state=inactive]:hidden">
+          <TournamentManager />
+        </TabsContent>
+      </Tabs>
     </main>
   );
 }
