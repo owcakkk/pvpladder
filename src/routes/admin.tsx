@@ -3,7 +3,10 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Lock, Trash2, Swords, Trophy } from "lucide-react";
+import { KeyRound, Lock, Trash2, Swords, Trophy } from "lucide-react";
+import {
+  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger,
+} from "@/components/ui/dialog";
 import { Header } from "@/components/ladder/Header";
 import { TierEditor } from "@/components/ladder/TierEditor";
 import { Avatar } from "@/components/ladder/Rankings";
@@ -56,7 +59,7 @@ function ResetForm({ onDone }: { onDone: () => void }) {
       <input className={inputCls} type="password" placeholder="New password" autoComplete="new-password" value={pw} onChange={(e) => setPw(e.target.value)} required minLength={6} />
       <input className={inputCls} type="password" placeholder="Repeat new password" autoComplete="new-password" value={pw2} onChange={(e) => setPw2(e.target.value)} required minLength={6} />
       <button className={`${btnCls} w-full`} disabled={busy}>{busy ? "Saving…" : "Change password"}</button>
-      <button type="button" className="w-full text-sm text-muted-foreground hover:text-foreground" onClick={onDone}>Back to login</button>
+      <button type="button" className="w-full text-sm text-muted-foreground hover:text-foreground" onClick={onDone}>Cancel</button>
     </form>
   );
 }
@@ -66,7 +69,6 @@ function PasswordForm({ onUnlocked }: { onUnlocked: () => void }) {
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [wrong, setWrong] = useState(false);
-  const [resetting, setResetting] = useState(false);
   const submit = async (e: React.FormEvent) => {
     e.preventDefault(); setBusy(true); setWrong(false);
     try {
@@ -79,16 +81,36 @@ function PasswordForm({ onUnlocked }: { onUnlocked: () => void }) {
     <div className="mx-auto mt-10 max-w-sm rounded-xl border bg-panel p-6">
       <div className="mb-4 flex items-center gap-2">
         <Lock className="h-5 w-5 text-primary" />
-        <h1 className="font-display text-2xl font-bold">{resetting ? "Reset password" : "Staff access"}</h1>
+        <h1 className="font-display text-2xl font-bold">Staff access</h1>
       </div>
-      {resetting ? <ResetForm onDone={() => setResetting(false)} /> : <form onSubmit={submit} className="space-y-3">
+      <form onSubmit={submit} className="space-y-3">
         <input className={inputCls} type="password" placeholder="Staff password" autoComplete="current-password"
           value={password} onChange={(e) => setPassword(e.target.value)} required />
         {wrong && <p className="text-sm text-destructive">Incorrect password</p>}
         <button className={`${btnCls} w-full`} disabled={busy}>{busy ? "Checking…" : "Enter"}</button>
-        <button type="button" className="w-full text-sm text-muted-foreground hover:text-foreground" onClick={() => setResetting(true)}>Reset password</button>
-      </form>}
+      </form>
     </div>
+  );
+}
+
+function ResetPasswordDialog({ onDone }: { onDone: () => void }) {
+  const [open, setOpen] = useState(false);
+  const close = () => { setOpen(false); onDone(); };
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+        <KeyRound className="h-4 w-4" /> Reset password
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-sm">
+        <DialogHeader>
+          <DialogTitle className="font-display">Reset staff password</DialogTitle>
+          <DialogDescription>
+            Enter the secret code and choose a new staff password. Everyone currently signed in gets logged out.
+          </DialogDescription>
+        </DialogHeader>
+        <ResetForm onDone={close} />
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -200,7 +222,8 @@ function AdminPage() {
         <PasswordForm onUnlocked={recheck} />
       ) : (
         <>
-          <div className="mx-auto mt-4 flex max-w-6xl justify-end">
+          <div className="mx-auto mt-4 flex max-w-6xl items-center justify-end gap-4">
+            <ResetPasswordDialog onDone={recheck} />
             <button className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
               onClick={async () => { await lock(); recheck(); }}>
               <Lock className="h-4 w-4" /> Lock staff panel
