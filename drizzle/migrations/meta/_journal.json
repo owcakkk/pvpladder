@@ -29,6 +29,13 @@
       "when": 1792833558862,
       "tag": "0003_create_tournaments",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793994788390,
+      "tag": "0004_staff_password_settings",
+      "breakpoints": true
     }
   ]
 }

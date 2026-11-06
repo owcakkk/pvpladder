@@ -73,6 +73,27 @@ export type Database = {
         }
         Relationships: []
       }
+      staff_settings: {
+        Row: {
+          id: number
+          password_hash: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          id?: number
+          password_hash: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          id?: number
+          password_hash?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: []
+      }
       tournament_players: {
         Row: {
           created_at: string
