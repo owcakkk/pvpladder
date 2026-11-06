@@ -1,9 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { useSession } from "@tanstack/react-start/server";
-import { createHash, timingSafeEqual } from "node:crypto";
+import { createHash, pbkdf2Sync, randomBytes, timingSafeEqual } from "node:crypto";
 import { DEFENCE_POINTS, KITS, REGIONS, TIERS, validateTierLP } from "./kits";
 
-type StaffSession = { staff?: boolean };
+type StaffSession = { staff?: boolean; v?: number };
 
 const sessionConfig = () => ({
   password: process.env["SESSION_SECRET"]!,
@@ -18,26 +18,68 @@ function matches(input: string, expected: string) {
   return timingSafeEqual(a, b);
 }
 
-async function requireStaff() {
-  const s = await useSession<StaffSession>(sessionConfig());
-  if (!s.data.staff) throw new Error("Staff password required");
+const hashPw = (pw: string, salt: string) => pbkdf2Sync(pw, salt, 100000, 32, "sha256").toString("hex");
+
+async function storedPassword() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  return supabaseAdmin;
+  const { data } = await supabaseAdmin.from("staff_settings").select("password_hash, version").eq("id", 1).maybeSingle();
+  return { db: supabaseAdmin, row: data, version: data?.version ?? 0 };
+}
+
+async function isStaff() {
+  const s = await useSession<StaffSession>(sessionConfig());
+  if (!s.data.staff) return null;
+  const st = await storedPassword();
+  return (s.data.v ?? 0) === st.version ? st.db : null;
+}
+
+async function requireStaff() {
+  const db = await isStaff();
+  if (!db) throw new Error("Staff password required");
+  return db;
 }
 
 export const staffStatus = createServerFn({ method: "GET" }).handler(async () => {
-  const s = await useSession<StaffSession>(sessionConfig());
-  return { staff: !!s.data.staff };
+  return { staff: !!(await isStaff()) };
 });
+
+export const resetStaffPassword = createServerFn({ method: "POST" })
+  .inputValidator((d: { code: string; password: string }) => {
+    const password = String(d.password ?? "");
+    if (password.length < 6) throw new Error("New password must be at least 6 characters");
+    return { code: String(d.code ?? ""), password };
+  })
+  .handler(async ({ data }) => {
+    const code = process.env["STAFF_RESET_CODE"];
+    if (!code) throw new Error("Reset code is not configured");
+    if (!matches(data.code, code)) return { ok: false as const };
+    const { db, version } = await storedPassword();
+    const salt = randomBytes(16).toString("hex");
+    const { error } = await db.from("staff_settings").upsert({
+      id: 1, password_hash: `${salt}:${hashPw(data.password, salt)}`, version: version + 1, updated_at: new Date().toISOString(),
+    });
+    if (error) throw new Error("Couldn't change password");
+    const s = await useSession<StaffSession>(sessionConfig());
+    await s.clear();
+    return { ok: true as const };
+  });
 
 export const unlockStaff = createServerFn({ method: "POST" })
   .inputValidator((d: { password: string }) => ({ password: String(d.password ?? "") }))
   .handler(async ({ data }) => {
-    const expected = process.env["STAFF_PASSWORD"];
-    if (!expected) throw new Error("Staff password is not configured");
-    if (!matches(data.password, expected)) return { ok: false as const };
+    const { row, version } = await storedPassword();
+    let ok: boolean;
+    if (row) {
+      const [salt, hash] = row.password_hash.split(":");
+      ok = matches(hashPw(data.password, salt ?? ""), hash ?? "");
+    } else {
+      const expected = process.env["STAFF_PASSWORD"];
+      if (!expected) throw new Error("Staff password is not configured");
+      ok = matches(data.password, expected);
+    }
+    if (!ok) return { ok: false as const };
     const s = await useSession<StaffSession>(sessionConfig());
-    await s.update({ staff: true });
+    await s.update({ staff: true, v: version });
     return { ok: true as const };
   });
 

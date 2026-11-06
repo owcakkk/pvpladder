@@ -9,7 +9,7 @@ import { TierEditor } from "@/components/ladder/TierEditor";
 import { Avatar } from "@/components/ladder/Rankings";
 import { ladderQuery } from "@/lib/ladder";
 import {
-  addPlayer, lockStaff, removePlayer, staffStatus, unlockStaff, updateRegion,
+  addPlayer, lockStaff, removePlayer, resetStaffPassword, staffStatus, unlockStaff, updateRegion,
 } from "@/lib/staff.functions";
 import { TournamentManager } from "@/components/ladder/TournamentManager";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -34,11 +34,39 @@ const inputCls = "w-full rounded-lg border bg-background px-3 py-2 text-sm outli
 const btnCls = "rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50";
 const errMsg = (e: unknown) => (e instanceof Error ? e.message : "Something went wrong");
 
+function ResetForm({ onDone }: { onDone: () => void }) {
+  const reset = useServerFn(resetStaffPassword);
+  const [code, setCode] = useState("");
+  const [pw, setPw] = useState("");
+  const [pw2, setPw2] = useState("");
+  const [busy, setBusy] = useState(false);
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (pw !== pw2) { toast.error("Passwords don't match"); return; }
+    setBusy(true);
+    try {
+      const r = await reset({ data: { code, password: pw } });
+      if (r.ok) { toast.success("Staff password changed"); onDone(); } else toast.error("Wrong secret code");
+    } catch (err) { toast.error(errMsg(err)); }
+    setBusy(false);
+  };
+  return (
+    <form onSubmit={submit} className="space-y-3">
+      <input className={inputCls} type="password" placeholder="Secret code" value={code} onChange={(e) => setCode(e.target.value)} required />
+      <input className={inputCls} type="password" placeholder="New password" autoComplete="new-password" value={pw} onChange={(e) => setPw(e.target.value)} required minLength={6} />
+      <input className={inputCls} type="password" placeholder="Repeat new password" autoComplete="new-password" value={pw2} onChange={(e) => setPw2(e.target.value)} required minLength={6} />
+      <button className={`${btnCls} w-full`} disabled={busy}>{busy ? "Saving…" : "Change password"}</button>
+      <button type="button" className="w-full text-sm text-muted-foreground hover:text-foreground" onClick={onDone}>Back to login</button>
+    </form>
+  );
+}
+
 function PasswordForm({ onUnlocked }: { onUnlocked: () => void }) {
   const unlock = useServerFn(unlockStaff);
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [wrong, setWrong] = useState(false);
+  const [resetting, setResetting] = useState(false);
   const submit = async (e: React.FormEvent) => {
     e.preventDefault(); setBusy(true); setWrong(false);
     try {
@@ -51,14 +79,15 @@ function PasswordForm({ onUnlocked }: { onUnlocked: () => void }) {
     <div className="mx-auto mt-10 max-w-sm rounded-xl border bg-panel p-6">
       <div className="mb-4 flex items-center gap-2">
         <Lock className="h-5 w-5 text-primary" />
-        <h1 className="font-display text-2xl font-bold">Staff access</h1>
+        <h1 className="font-display text-2xl font-bold">{resetting ? "Reset password" : "Staff access"}</h1>
       </div>
-      <form onSubmit={submit} className="space-y-3">
+      {resetting ? <ResetForm onDone={() => setResetting(false)} /> : <form onSubmit={submit} className="space-y-3">
         <input className={inputCls} type="password" placeholder="Staff password" autoComplete="current-password"
           value={password} onChange={(e) => setPassword(e.target.value)} required />
         {wrong && <p className="text-sm text-destructive">Incorrect password</p>}
         <button className={`${btnCls} w-full`} disabled={busy}>{busy ? "Checking…" : "Enter"}</button>
-      </form>
+        <button type="button" className="w-full text-sm text-muted-foreground hover:text-foreground" onClick={() => setResetting(true)}>Reset password</button>
+      </form>}
     </div>
   );
 }
