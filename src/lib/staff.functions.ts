@@ -43,6 +43,15 @@ export const staffStatus = createServerFn({ method: "GET" }).handler(async () =>
   return { staff: !!(await isStaff()) };
 });
 
+export const recentUsernameChanges = createServerFn({ method: "GET" }).handler(async () => {
+  const db = await requireStaff();
+  const { data, error } = await db.from("minecraft_username_changes")
+    .select("id, source_table, source_id, mc_uuid, old_username, new_username, changed_at")
+    .order("changed_at", { ascending: false }).order("id", { ascending: false }).limit(100);
+  if (error) throw new Error("Couldn't load username changes");
+  return data ?? [];
+});
+
 export const resetStaffPassword = createServerFn({ method: "POST" })
   .inputValidator((d: { code: string; password: string }) => {
     const password = String(d.password ?? "");

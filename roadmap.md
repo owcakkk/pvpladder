@@ -16,5 +16,7 @@
 - [x] Verify independent rosters and saved tournament changes end to end.
 
 # Minecraft usernames
+- [ ] Record name changes atomically and add staff-only history with UUID, current tiers and LP.
+- [ ] Test audit recording and access, and verify the staff review screen.
 - [x] Add authenticated scheduled official UUID username checks, preserving player identity, tiers and LP.
 - [x] Test identity preservation and failures, verify the callback, and activate the schedule (publish updated app for production delivery).

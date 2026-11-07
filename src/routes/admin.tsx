@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
-import { KeyRound, Lock, Trash2, Swords, Trophy } from "lucide-react";
+import { History, KeyRound, Lock, Trash2, Swords, Trophy } from "lucide-react";
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
@@ -15,6 +15,7 @@ import {
   addPlayer, lockStaff, removePlayer, resetStaffPassword, staffStatus, unlockStaff, updateRegion,
 } from "@/lib/staff.functions";
 import { TournamentManager } from "@/components/ladder/TournamentManager";
+import { UsernameChanges } from "@/components/ladder/UsernameChanges";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { KITS, REGIONS } from "@/lib/kits";
 
@@ -124,6 +125,7 @@ function AdminPanel() {
   const [region, setRegion] = useState("EU");
   const [busy, setBusy] = useState(false);
   const [filter, setFilter] = useState("");
+  const [tab, setTab] = useState("tiers");
   const refresh = () => qc.invalidateQueries({ queryKey: ["ladder"] });
 
   const run = async (fn: () => Promise<unknown>) => {
@@ -144,13 +146,16 @@ function AdminPanel() {
 
   return (
     <main className="mx-auto mt-6 max-w-6xl">
-      <Tabs defaultValue="tiers">
-        <TabsList aria-label="Staff panel sections" className="mb-4 grid h-11 w-full grid-cols-2 sm:max-w-sm">
+      <Tabs value={tab} onValueChange={setTab}>
+        <TabsList aria-label="Staff panel sections" className="mb-4 grid h-auto min-h-11 w-full grid-cols-3 sm:max-w-xl">
           <TabsTrigger value="tiers" className="h-full gap-2 data-[state=active]:text-primary">
             <Swords className="h-4 w-4" /> Tier Assign
           </TabsTrigger>
           <TabsTrigger value="tournaments" className="h-full gap-2 data-[state=active]:text-primary">
             <Trophy className="h-4 w-4" /> Tournaments
+          </TabsTrigger>
+          <TabsTrigger value="usernames" className="h-full gap-2 whitespace-normal text-center data-[state=active]:text-primary">
+            <History className="hidden h-4 w-4 shrink-0 sm:block" /> Username Changes
           </TabsTrigger>
         </TabsList>
         <TabsContent value="tiers" forceMount className="space-y-6 data-[state=inactive]:hidden">
@@ -201,6 +206,9 @@ function AdminPanel() {
         </TabsContent>
         <TabsContent value="tournaments" forceMount className="data-[state=inactive]:hidden">
           <TournamentManager />
+        </TabsContent>
+        <TabsContent value="usernames" forceMount className="data-[state=inactive]:hidden">
+          <UsernameChanges active={tab === "usernames"} />
         </TabsContent>
       </Tabs>
     </main>

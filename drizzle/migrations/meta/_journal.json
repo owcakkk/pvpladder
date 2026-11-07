@@ -43,6 +43,13 @@
       "when": 1794060265612,
       "tag": "0005_minecraft_username_checks",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794060630557,
+      "tag": "0006_minecraft_username_history",
+      "breakpoints": true
     }
   ]
 }

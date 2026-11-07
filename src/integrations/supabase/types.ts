@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      minecraft_username_changes: {
+        Row: {
+          changed_at: string
+          id: string
+          mc_uuid: string
+          new_username: string
+          old_username: string
+          source_id: string
+          source_table: string
+        }
+        Insert: {
+          changed_at?: string
+          id?: string
+          mc_uuid: string
+          new_username: string
+          old_username: string
+          source_id: string
+          source_table: string
+        }
+        Update: {
+          changed_at?: string
+          id?: string
+          mc_uuid?: string
+          new_username?: string
+          old_username?: string
+          source_id?: string
+          source_table?: string
+        }
+        Relationships: []
+      }
       player_tiers: {
         Row: {
           bonus_points: number
