@@ -14,3 +14,7 @@
 - [x] Staff panel: tournament title, register up to 10 players, edit wins/losses, remove players.
 - [x] Finish multiple tournaments: dropdown, overview/detail pages, staff create/switch/delete controls.
 - [x] Verify independent rosters and saved tournament changes end to end.
+
+# Minecraft usernames
+- [x] Add authenticated scheduled official UUID username checks, preserving player identity, tiers and LP.
+- [x] Test identity preservation and failures, verify the callback, and activate the schedule (publish updated app for production delivery).

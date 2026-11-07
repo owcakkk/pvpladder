@@ -56,6 +56,7 @@ export type Database = {
           mc_uuid: string | null
           region: string
           username: string
+          username_checked_at: string | null
         }
         Insert: {
           created_at?: string
@@ -63,6 +64,7 @@ export type Database = {
           mc_uuid?: string | null
           region?: string
           username: string
+          username_checked_at?: string | null
         }
         Update: {
           created_at?: string
@@ -70,6 +72,7 @@ export type Database = {
           mc_uuid?: string | null
           region?: string
           username?: string
+          username_checked_at?: string | null
         }
         Relationships: []
       }
@@ -102,6 +105,7 @@ export type Database = {
           mc_uuid: string | null
           tournament_id: string
           username: string
+          username_checked_at: string | null
           wins: number
         }
         Insert: {
@@ -111,6 +115,7 @@ export type Database = {
           mc_uuid?: string | null
           tournament_id: string
           username: string
+          username_checked_at?: string | null
           wins?: number
         }
         Update: {
@@ -120,6 +125,7 @@ export type Database = {
           mc_uuid?: string | null
           tournament_id?: string
           username?: string
+          username_checked_at?: string | null
           wins?: number
         }
         Relationships: [

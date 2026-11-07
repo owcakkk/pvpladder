@@ -36,6 +36,13 @@
       "when": 1793994788390,
       "tag": "0004_staff_password_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794060265612,
+      "tag": "0005_minecraft_username_checks",
+      "breakpoints": true
     }
   ]
 }

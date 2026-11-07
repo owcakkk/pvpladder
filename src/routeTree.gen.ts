@@ -17,6 +17,7 @@ import { Route as PlayersPlayerIdRouteImport } from './routes/players.$playerId'
 import { Route as RankingsKitRouteImport } from './routes/rankings.$kit'
 import { Route as TournamentsIndexRouteImport } from './routes/tournaments.index'
 import { Route as TournamentsTournamentIdRouteImport } from './routes/tournaments.$tournamentId'
+import { Route as ApiPublicJobsRefreshMinecraftUsernamesRouteImport } from './routes/api/public/jobs/refresh-minecraft-usernames'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -58,6 +59,12 @@ const TournamentsTournamentIdRoute = TournamentsTournamentIdRouteImport.update({
   path: '/$tournamentId',
   getParentRoute: () => TournamentsRoute,
 } as any)
+const ApiPublicJobsRefreshMinecraftUsernamesRoute =
+  ApiPublicJobsRefreshMinecraftUsernamesRouteImport.update({
+    id: '/api/public/jobs/refresh-minecraft-usernames',
+    path: '/api/public/jobs/refresh-minecraft-usernames',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -68,6 +75,7 @@ export interface FileRoutesByFullPath {
   '/rankings/$kit': typeof RankingsKitRoute
   '/tournaments/$tournamentId': typeof TournamentsTournamentIdRoute
   '/tournaments/': typeof TournamentsIndexRoute
+  '/api/public/jobs/refresh-minecraft-usernames': typeof ApiPublicJobsRefreshMinecraftUsernamesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -77,6 +85,7 @@ export interface FileRoutesByTo {
   '/rankings/$kit': typeof RankingsKitRoute
   '/tournaments/$tournamentId': typeof TournamentsTournamentIdRoute
   '/tournaments': typeof TournamentsIndexRoute
+  '/api/public/jobs/refresh-minecraft-usernames': typeof ApiPublicJobsRefreshMinecraftUsernamesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -88,6 +97,7 @@ export interface FileRoutesById {
   '/rankings/$kit': typeof RankingsKitRoute
   '/tournaments/$tournamentId': typeof TournamentsTournamentIdRoute
   '/tournaments/': typeof TournamentsIndexRoute
+  '/api/public/jobs/refresh-minecraft-usernames': typeof ApiPublicJobsRefreshMinecraftUsernamesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -100,6 +110,7 @@ export interface FileRouteTypes {
     | '/rankings/$kit'
     | '/tournaments/$tournamentId'
     | '/tournaments/'
+    | '/api/public/jobs/refresh-minecraft-usernames'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -109,6 +120,7 @@ export interface FileRouteTypes {
     | '/rankings/$kit'
     | '/tournaments/$tournamentId'
     | '/tournaments'
+    | '/api/public/jobs/refresh-minecraft-usernames'
   id:
     | '__root__'
     | '/'
@@ -119,6 +131,7 @@ export interface FileRouteTypes {
     | '/rankings/$kit'
     | '/tournaments/$tournamentId'
     | '/tournaments/'
+    | '/api/public/jobs/refresh-minecraft-usernames'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -128,6 +141,7 @@ export interface RootRouteChildren {
   TournamentsRoute: typeof TournamentsRouteWithChildren
   PlayersPlayerIdRoute: typeof PlayersPlayerIdRoute
   RankingsKitRoute: typeof RankingsKitRoute
+  ApiPublicJobsRefreshMinecraftUsernamesRoute: typeof ApiPublicJobsRefreshMinecraftUsernamesRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -188,6 +202,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TournamentsTournamentIdRouteImport
       parentRoute: typeof TournamentsRoute
     }
+    '/api/public/jobs/refresh-minecraft-usernames': {
+      id: '/api/public/jobs/refresh-minecraft-usernames'
+      path: '/api/public/jobs/refresh-minecraft-usernames'
+      fullPath: '/api/public/jobs/refresh-minecraft-usernames'
+      preLoaderRoute: typeof ApiPublicJobsRefreshMinecraftUsernamesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -212,6 +233,8 @@ const rootRouteChildren: RootRouteChildren = {
   TournamentsRoute: TournamentsRouteWithChildren,
   PlayersPlayerIdRoute: PlayersPlayerIdRoute,
   RankingsKitRoute: RankingsKitRoute,
+  ApiPublicJobsRefreshMinecraftUsernamesRoute:
+    ApiPublicJobsRefreshMinecraftUsernamesRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
