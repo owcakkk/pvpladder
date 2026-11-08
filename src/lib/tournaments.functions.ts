@@ -1,8 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { useSession } from "@tanstack/react-start/server";
 import { lookupMcPlayer } from "./mc-lookup.server";
+import { KITS } from "./kits";
 
-type StaffSession = { staff?: boolean };
+type StaffSession = { staff?: boolean; v?: number };
 
 const sessionConfig = () => ({
   password: process.env["SESSION_SECRET"]!,
@@ -15,6 +16,8 @@ async function requireStaff() {
   const s = await useSession<StaffSession>(sessionConfig());
   if (!s.data.staff) throw new Error("Staff password required");
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: settings, error } = await supabaseAdmin.from("staff_settings").select("version").eq("id", 1).maybeSingle();
+  if (error || (s.data.v ?? 0) !== (settings?.version ?? 0)) throw new Error("Staff password required");
   return supabaseAdmin;
 }
 
@@ -50,6 +53,18 @@ export const setTournamentTitle = createServerFn({ method: "POST" })
     const db = await requireStaff();
     const { error } = await db.from("tournaments").update({ title: data.title }).eq("id", data.tournamentId);
     if (error) throw new Error("Couldn't save title");
+    return { ok: true };
+  });
+
+export const setTournamentKit = createServerFn({ method: "POST" })
+  .inputValidator((d: { tournamentId: string; kit: string | null }) => {
+    if (d.kit !== null && !KITS.some((kit) => kit.id === d.kit)) throw new Error("Invalid kit");
+    return d;
+  })
+  .handler(async ({ data }) => {
+    const db = await requireStaff();
+    const { error } = await db.from("tournaments").update({ kit: data.kit }).eq("id", data.tournamentId);
+    if (error) throw new Error("Couldn't save tournament kit");
     return { ok: true };
   });
 

@@ -50,6 +50,13 @@
       "when": 1794060630557,
       "tag": "0006_minecraft_username_history",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794142606683,
+      "tag": "0007_tournament_kit_auto_rosters",
+      "breakpoints": true
     }
   ]
 }

@@ -10,6 +10,8 @@
 - [ ] Full lower-tier skill categories and LP/CF split: awaiting category definitions.
 
 # Tournaments
+- [ ] Add kit selection and atomic LT3 roster synchronization with derank removal and a 10-player cap.
+- [ ] Test eligibility changes and verify tournament controls.
 - [x] Tournaments page with round-robin standings (ratio = wins − losses, top 3 earn HT3).
 - [x] Staff panel: tournament title, register up to 10 players, edit wins/losses, remove players.
 - [x] Finish multiple tournaments: dropdown, overview/detail pages, staff create/switch/delete controls.

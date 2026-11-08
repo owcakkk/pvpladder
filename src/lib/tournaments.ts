@@ -7,9 +7,10 @@ export type TournamentPlayer = {
   mc_uuid: string | null;
   wins: number;
   losses: number;
+  ladder_player_id?: string | null;
 };
 
-export type TournamentSummary = { id: string; title: string };
+export type TournamentSummary = { id: string; title: string; kit?: string | null };
 
 export type Tournament = TournamentSummary & { players: TournamentPlayer[] };
 
@@ -22,7 +23,7 @@ export const tournamentsQuery = queryOptions({
   queryKey: ["tournaments"],
   queryFn: async (): Promise<TournamentSummary[]> => {
     const { data, error } = await supabase
-      .from("tournaments").select("id, title").order("created_at", { ascending: false });
+      .from("tournaments").select("id, title, kit").order("created_at", { ascending: false });
     if (error) throw new Error("Couldn't load tournaments");
     return data ?? [];
   },
@@ -32,12 +33,12 @@ export const tournamentQuery = (id: string) => queryOptions({
   queryKey: ["tournament", id],
   queryFn: async (): Promise<Tournament | null> => {
     const { data: t, error } = await supabase
-      .from("tournaments").select("id, title").eq("id", id).maybeSingle();
+      .from("tournaments").select("id, title, kit").eq("id", id).maybeSingle();
     if (error) throw new Error("Couldn't load tournament");
     if (!t) return null;
     const { data: players, error: playersError } = await supabase
-      .from("tournament_players").select("id, username, mc_uuid, wins, losses").eq("tournament_id", t.id);
+      .from("tournament_players").select("id, username, mc_uuid, wins, losses, ladder_player_id").eq("tournament_id", t.id);
     if (playersError) throw new Error("Couldn't load tournament players");
-    return { id: t.id, title: t.title, players: players ?? [] };
+    return { id: t.id, title: t.title, kit: t.kit, players: players ?? [] };
   },
 });

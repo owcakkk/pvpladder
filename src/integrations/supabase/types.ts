@@ -131,6 +131,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          ladder_player_id: string | null
           losses: number
           mc_uuid: string | null
           tournament_id: string
@@ -141,6 +142,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          ladder_player_id?: string | null
           losses?: number
           mc_uuid?: string | null
           tournament_id: string
@@ -151,6 +153,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          ladder_player_id?: string | null
           losses?: number
           mc_uuid?: string | null
           tournament_id?: string
@@ -159,6 +162,13 @@ export type Database = {
           wins?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "tournament_players_ladder_player_id_fkey"
+            columns: ["ladder_player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "tournament_players_tournament_id_fkey"
             columns: ["tournament_id"]
@@ -172,16 +182,19 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          kit: string | null
           title: string
         }
         Insert: {
           created_at?: string
           id?: string
+          kit?: string | null
           title?: string
         }
         Update: {
           created_at?: string
           id?: string
+          kit?: string | null
           title?: string
         }
         Relationships: []
@@ -219,6 +232,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      sync_tournament_lt3_roster: {
+        Args: { p_tournament_id: string }
+        Returns: undefined
       }
     }
     Enums: {

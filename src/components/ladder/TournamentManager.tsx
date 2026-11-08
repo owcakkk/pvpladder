@@ -5,8 +5,9 @@ import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ladder/Rankings";
-import { addTournamentPlayer, createTournament, deleteTournament, removeTournamentPlayer, setTournamentRecord, setTournamentTitle } from "@/lib/tournaments.functions";
+import { addTournamentPlayer, createTournament, deleteTournament, removeTournamentPlayer, setTournamentRecord, setTournamentTitle, setTournamentKit } from "@/lib/tournaments.functions";
 import { ratio, sortByRatio, tournamentQuery, tournamentsQuery, type TournamentPlayer } from "@/lib/tournaments";
+import { KITS } from "@/lib/kits";
 
 const inputCls = "w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring";
 const errorMessage = (e: unknown) => e instanceof Error ? e.message : "Something went wrong";
@@ -31,8 +32,9 @@ function RecordEditor({ player, refresh }: { player: TournamentPlayer; refresh: 
 
 function TournamentEditor({ id }: { id: string }) {
   const qc = useQueryClient();
-  const { data: tournament, isLoading, error } = useQuery(tournamentQuery(id));
+  const { data: tournament, isLoading, error } = useQuery({ ...tournamentQuery(id), refetchInterval: 15000 });
   const saveTitle = useServerFn(setTournamentTitle);
+  const saveKit = useServerFn(setTournamentKit);
   const addPlayer = useServerFn(addTournamentPlayer);
   const removePlayer = useServerFn(removeTournamentPlayer);
   const [title, setTitle] = useState<string | null>(null);
@@ -56,6 +58,24 @@ function TournamentEditor({ id }: { id: string }) {
       <input aria-label="Tournament title" className={`${inputCls} max-w-xs`} value={title ?? tournament.title} onChange={(e) => setTitle(e.target.value)} maxLength={80} required />
       <Button disabled={busy}>Save title</Button>
     </form>
+    <div className="flex flex-wrap items-center gap-3">
+      <label htmlFor={`tournament-kit-${id}`} className="text-sm font-semibold">LT3 registration kit</label>
+      <select id={`tournament-kit-${id}`} aria-label="Tournament kit" className={`${inputCls} max-w-xs`} value={tournament.kit ?? ""} disabled={busy} onChange={async (e) => {
+        const kit = e.target.value || null;
+        if (tournament.kit && kit && kit !== tournament.kit && !confirm("Change kit? Automatically registered players and their tournament records will be replaced.")) return;
+        setBusy(true);
+        try {
+          await saveKit({ data: { tournamentId: id, kit } });
+          await Promise.all([refresh(), qc.invalidateQueries({ queryKey: ["tournaments"] })]);
+          toast.success("Tournament kit saved");
+        } catch (err) { toast.error(errorMessage(err)); }
+        finally { setBusy(false); }
+      }}>
+        <option value="">Manual registration only</option>
+        {KITS.map((kit) => <option key={kit.id} value={kit.id}>{kit.name}</option>)}
+      </select>
+      <span className="text-sm text-muted-foreground">{players.length}/10 players</span>
+    </div>
     <form className="flex flex-wrap gap-3" onSubmit={async (e) => {
       e.preventDefault(); setBusy(true);
       try { const result = await addPlayer({ data: { tournamentId: id, username } }); await refresh(); setUsername(""); toast.success(`Registered ${result.username}`); }
@@ -70,6 +90,7 @@ function TournamentEditor({ id }: { id: string }) {
         <span className="w-6 font-display font-bold text-muted-foreground">{i + 1}</span>
         <Avatar p={player} className="h-8" />
         <span className="break-all font-semibold">{player.username}</span>
+        {player.ladder_player_id && <span className="text-xs text-primary">LT3 entry</span>}
         <span className="text-sm text-muted-foreground">ratio {ratio(player) > 0 ? `+${ratio(player)}` : ratio(player)}</span>
         <div className="flex max-w-full flex-wrap items-center gap-2 sm:ml-auto">
           <RecordEditor player={player} refresh={refresh} />
