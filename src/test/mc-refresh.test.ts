@@ -39,7 +39,7 @@ describe("official Minecraft username refresh", () => {
   it("queries the official profile endpoint by normalized permanent UUID", async () => {
     const request = profileRequest();
     expect(await officialMcName("069a79f4-44e9-4726-a5be-fca90e38aaf5", request)).toBe("NewName");
-    expect(request.mock.calls[0]?.[0]).toBe(`https://sessionserver.mojang.com/session/minecraft/profile/${uuid}`);
+    expect(request.mock.calls[0]?.[0]).toBe(`https://api.minecraftservices.com/minecraft/profile/lookup/${uuid}`);
   });
 
   it("renames existing UUID rows while preserving IDs, tiers, LP and tournament results", async () => {
@@ -82,5 +82,13 @@ describe("official Minecraft username refresh", () => {
     expect(await officialMcName("invalid", request)).toBeNull();
     expect(request).not.toHaveBeenCalled();
     expect(await officialMcName(uuid, request)).toBeNull();
+  });
+
+  it("uses the second official profile service when the primary service is blocked", async () => {
+    const request = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(new Response("Blocked", { status: 403 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ id: uuid, name: "NewName" })));
+    expect(await officialMcName(uuid, request)).toBe("NewName");
+    expect(request.mock.calls[1]?.[0]).toBe(`https://sessionserver.mojang.com/session/minecraft/profile/${uuid}`);
   });
 });

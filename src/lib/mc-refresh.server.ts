@@ -14,9 +14,17 @@ export function normalizeMcUUID(value: string): string | null {
 export async function officialMcName(uuid: string, request: typeof fetch = fetch): Promise<string | null> {
   const normalized = normalizeMcUUID(uuid);
   if (!normalized) return null;
-  const response = await request(`https://sessionserver.mojang.com/session/minecraft/profile/${normalized}`, {
-    headers: { accept: "application/json" }, signal: AbortSignal.timeout(1200),
+  let response = await request(`https://api.minecraftservices.com/minecraft/profile/lookup/${normalized}`, {
+    headers: { accept: "application/json" }, signal: AbortSignal.timeout(2500),
   });
+  // Minecraft Services supplies names directly; sessionserver is a second
+  // official source when the name-only service is temporarily unavailable.
+  if (!response.ok && response.status !== 429) {
+    console.warn(`Minecraft Services name lookup failed [${response.status}]: ${await response.text()}`);
+    response = await request(`https://sessionserver.mojang.com/session/minecraft/profile/${normalized}`, {
+      headers: { accept: "application/json" }, signal: AbortSignal.timeout(1200),
+    });
+  }
   if (!response.ok) {
     const body = await response.text();
     console.warn(`Minecraft profile lookup failed [${response.status}]: ${body}`);

@@ -16,7 +16,9 @@
 - [x] Verify independent rosters and saved tournament changes end to end.
 
 # Minecraft usernames
-- [ ] Record name changes atomically and add staff-only history with UUID, current tiers and LP.
-- [ ] Test audit recording and access, and verify the staff review screen.
+- [ ] Verify scheduled username updates from the live site after publishing; the official sessionserver blocks its requests.
+- [x] Correct SmokeIsMe to the official _youngGoat name in place and add the official Minecraft Services name lookup.
+- [x] Record name changes atomically and add staff-only history with UUID, current tiers and LP.
+- [ ] Verify the staff review screen while logged in; the available test password is no longer current (audit recording and access tests pass).
 - [x] Add authenticated scheduled official UUID username checks, preserving player identity, tiers and LP.
 - [x] Test identity preservation and failures, verify the callback, and activate the schedule (publish updated app for production delivery).
