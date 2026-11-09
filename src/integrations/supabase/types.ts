@@ -47,27 +47,42 @@ export type Database = {
       player_tiers: {
         Row: {
           bonus_points: number
+          categories: Json | null
           kit: string
+          kit_name: string | null
           player_id: string
+          tested_at: number | null
           tier: string
           tier_lp: number | null
+          total_lp: number | null
           updated_at: string
+          username: string | null
         }
         Insert: {
           bonus_points?: number
+          categories?: Json | null
           kit: string
+          kit_name?: string | null
           player_id: string
+          tested_at?: number | null
           tier: string
           tier_lp?: number | null
+          total_lp?: number | null
           updated_at?: string
+          username?: string | null
         }
         Update: {
           bonus_points?: number
+          categories?: Json | null
           kit?: string
+          kit_name?: string | null
           player_id?: string
+          tested_at?: number | null
           tier?: string
           tier_lp?: number | null
+          total_lp?: number | null
           updated_at?: string
+          username?: string | null
         }
         Relationships: [
           {
@@ -126,6 +141,38 @@ export type Database = {
           version?: number
         }
         Relationships: []
+      }
+      tier_sync_metadata: {
+        Row: {
+          discord_id: string | null
+          guild_id: string | null
+          kit: string
+          player_id: string
+          tester_id: string | null
+        }
+        Insert: {
+          discord_id?: string | null
+          guild_id?: string | null
+          kit: string
+          player_id: string
+          tester_id?: string | null
+        }
+        Update: {
+          discord_id?: string | null
+          guild_id?: string | null
+          kit?: string
+          player_id?: string
+          tester_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tier_sync_metadata_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tournament_players: {
         Row: {
@@ -226,6 +273,7 @@ export type Database = {
         Args: { p_delta: number; p_kit: string; p_player_id: string }
         Returns: number
       }
+      apply_discord_tier_sync: { Args: { payload: Json }; Returns: undefined }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
