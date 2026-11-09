@@ -74,6 +74,8 @@ export const tierBadgeClass = (tier?: string) => {
 // TIERS is listed highest → lowest, so the array index is the rank (0 = HT1).
 // Unranked/unknown tiers return TIERS.length so they sort last.
 export const tierRank = (tier?: string) => (tier ? TIERS.indexOf(tier as Tier) : TIERS.length);
+export const compareTierResults = (a: { tier?: string | undefined; lp: number | null }, b: { tier?: string | undefined; lp: number | null }) =>
+  tierRank(a.tier) - tierRank(b.tier) || (b.lp ?? -1) - (a.lp ?? -1);
 export const bestTierRank = (tiers: Record<string, string>) => {
   const values = Object.values(tiers).filter(Boolean).map(tierRank);
   return values.length ? Math.min(...values) : TIERS.length;

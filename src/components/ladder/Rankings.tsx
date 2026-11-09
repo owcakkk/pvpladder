@@ -6,7 +6,7 @@ import { ladderQuery, type LadderPlayer } from "@/lib/ladder";
 import {
   KITS, OVERALL_ICON, avatarFallback, avatarUrl,
   regionClass, tierBadgeClass, tierRingClass, kitPoints, isLowerTier,
-  bestTierRank, bestTierPoints, compareKitsByTier,
+  bestTierRank, bestTierPoints, compareKitsByTier, compareTierResults,
 } from "@/lib/kits";
 
 
@@ -71,6 +71,7 @@ function rankBg(i: number) {
 
 function Row({ p, i, kit }: { p: LadderPlayer; i: number; kit?: string | undefined }) {
   const points = kit ? kitPoints(p.tiers[kit], p.bonuses[kit] ?? 0, p.tierLP[kit]) : p.points;
+  const displayLP = kit && p.synced?.[kit] ? p.synced[kit].lp : points;
   const bonus = kit ? (isLowerTier(p.tiers[kit]) ? 0 : p.bonuses[kit] ?? 0) : Object.entries(p.bonuses).reduce((sum, [id, value]) => sum + (isLowerTier(p.tiers[id]) ? 0 : value), 0);
   const byTier = compareKitsByTier(p.tiers, p.bonuses, p.tierLP);
   const sorted = Object.entries(p.tiers).sort((a, b) => byTier(a[0], b[0]));
@@ -89,13 +90,13 @@ function Row({ p, i, kit }: { p: LadderPlayer; i: number; kit?: string | undefin
       <div className="flex min-w-0 flex-1 flex-col justify-center px-4 py-3 md:w-64 md:flex-none">
         <span className="truncate font-display text-xl font-bold">{p.username}</span>
         <span className="text-xs font-semibold text-muted-foreground">
-          <span className="text-primary">◆</span> <span title={`Base: ${points - bonus} LP · Bonus: ${bonus > 0 ? "+" : ""}${bonus} LP`}>{points} LP</span>
+          <span className="text-primary">◆</span> <span title={`Base: ${points - bonus} LP · Bonus: ${bonus > 0 ? "+" : ""}${bonus} LP`}>{displayLP == null ? "-" : `${displayLP} LP`}</span>
         </span>
       </div>
       <div className="flex items-center border-x px-4">
         <span className={`rounded-md px-2.5 py-1 font-display text-lg font-bold ${regionClass(p.region)}`}>{p.region}</span>
       </div>
-      <div className="hidden flex-1 flex-wrap items-center justify-center gap-2 px-4 py-2 lg:flex">
+      <div className={`${kit ? "flex" : "hidden lg:flex"} flex-1 flex-wrap items-center justify-center gap-2 px-4 py-2`}>
         {kit ? (
           <TierChip kitId={kit} tier={p.tiers[kit]} />
         ) : (
@@ -107,10 +108,11 @@ function Row({ p, i, kit }: { p: LadderPlayer; i: number; kit?: string | undefin
 }
 
 export function Rankings({ kit, q }: { kit?: string | undefined; q?: string | undefined }) {
-  const { data, isLoading, error } = useQuery(ladderQuery);
+  const { data, isLoading, error } = useQuery({ ...ladderQuery, refetchInterval: 15000 });
   let list = data ?? [];
   if (kit) {
-    list = list.filter((p) => p.tiers[kit]).sort((a, b) => kitPoints(b.tiers[kit], b.bonuses[kit] ?? 0, b.tierLP[kit]) - kitPoints(a.tiers[kit], a.bonuses[kit] ?? 0, a.tierLP[kit]));
+    const result = (p: LadderPlayer) => ({ tier: p.tiers[kit], lp: p.synced?.[kit] ? p.synced[kit].lp : kitPoints(p.tiers[kit], p.bonuses[kit] ?? 0, p.tierLP[kit]) });
+    list = list.filter((p) => p.tiers[kit]).sort((a, b) => compareTierResults(result(a), result(b)) || a.username.localeCompare(b.username));
   } else list = [...list].sort((a, b) =>
     b.points - a.points
     || bestTierRank(a.tiers) - bestTierRank(b.tiers)

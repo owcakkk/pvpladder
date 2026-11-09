@@ -150,7 +150,7 @@ export const setTier = createServerFn({ method: "POST" })
     const db = await requireStaff();
     const { error } = data.tier === ""
       ? await db.from("player_tiers").delete().eq("player_id", data.playerId).eq("kit", data.kit)
-      : await db.from("player_tiers").upsert({ player_id: data.playerId, kit: data.kit, tier: data.tier, tier_lp: data.tierLP, updated_at: new Date().toISOString() });
+      : await db.from("player_tiers").upsert({ player_id: data.playerId, kit: data.kit, tier: data.tier, tier_lp: data.tierLP, total_lp: null, categories: null, tested_at: null, updated_at: new Date().toISOString() });
     if (error) throw new Error("Couldn't save tier");
     return { ok: true };
   });

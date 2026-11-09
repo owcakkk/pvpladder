@@ -10,9 +10,9 @@
 - [ ] Full lower-tier skill categories and LP/CF split: awaiting category definitions.
 
 # Tournaments
-- [ ] Discord bot: secure signed tier endpoint, additive result storage, ranking/profile display, tests and secret setup.
-- [ ] Add kit selection and atomic LT3 roster synchronization with derank removal and a 10-player cap.
-- [ ] Test eligibility changes and verify tournament controls.
+- [x] Discord bot: secure signed tier endpoint, additive result storage, ranking/profile display, tests and secret setup; signed live preview event reads back on rankings/profile.
+- [x] Add kit selection and atomic LT3 roster synchronization with derank removal and a 10-player cap.
+- [ ] Verify tournament controls while logged in; automatic eligibility/database tests pass, but available staff password is outdated.
 - [x] Tournaments page with round-robin standings (ratio = wins − losses, top 3 earn HT3).
 - [x] Staff panel: tournament title, register up to 10 players, edit wins/losses, remove players.
 - [x] Finish multiple tournaments: dropdown, overview/detail pages, staff create/switch/delete controls.

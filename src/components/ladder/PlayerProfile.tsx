@@ -9,12 +9,13 @@ import {
   KITS, compareKitsByTier, isLowerTier, kitPoints, regionClass, tierBadgeClass, tierRingClass, type Tier,
 } from "@/lib/kits";
 
-function KitCard({ kitId, tier, bonus, lp }: { kitId: string; tier?: Tier | undefined; bonus: number; lp: number | null }) {
+function KitCard({ kitId, tier, bonus, lp, synced }: { kitId: string; tier?: Tier | undefined; bonus: number; lp: number | null; synced?: NonNullable<LadderPlayer["synced"]>[string] | undefined }) {
   const k = KITS.find((x) => x.id === kitId);
   if (!k) return null;
   const points = kitPoints(tier, tier && !isLowerTier(tier) ? bonus : 0, lp);
   return (
-    <div className="flex items-center justify-between gap-3 rounded-lg border bg-row px-4 py-3">
+    <div className="rounded-lg border bg-row px-4 py-3">
+      <div className="flex items-center justify-between gap-3">
       <div className="flex min-w-0 items-center gap-3">
         <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-full bg-background ring-2 ${tier ? tierRingClass(tier) : "ring-low opacity-50"}`}>
           <KitIcon kit={k} className={`h-5 w-5 ${k.tone}`} />
@@ -27,9 +28,9 @@ function KitCard({ kitId, tier, bonus, lp }: { kitId: string; tier?: Tier | unde
         </div>
       </div>
       <div className="text-right">
-        <span className="block font-display text-xl font-black text-primary">{points} LP</span>
+        <span className="block font-display text-xl font-black text-primary">{synced ? synced.lp == null ? "-" : `${synced.lp} LP` : `${points} LP`}</span>
         <span className="text-xs font-semibold text-muted-foreground">
-          {tier
+          {synced ? new Date(synced.testedAt).toLocaleDateString("en-GB", { timeZone: "UTC" }) : tier
             ? isLowerTier(tier)
               ? `${lp ?? 0} tier LP`
               : bonus !== 0
@@ -38,6 +39,12 @@ function KitCard({ kitId, tier, bonus, lp }: { kitId: string; tier?: Tier | unde
             : "No tier yet"}
         </span>
       </div>
+      </div>
+      {synced?.categories != null && <dl className="mt-3 space-y-1 border-t pt-2 text-xs">
+        {Object.entries(synced.categories).map(([name, value]) => <div key={name} className="flex flex-wrap justify-between gap-2">
+          <dt className="break-all text-muted-foreground">{name}</dt><dd className="max-w-full break-all font-semibold">{typeof value === "object" ? JSON.stringify(value) : String(value)}</dd>
+        </div>)}
+      </dl>}
     </div>
   );
 }
@@ -85,6 +92,7 @@ export function PlayerProfile({ player }: { player: LadderPlayer }) {
                 tier={player.tiers[k.id]}
                 bonus={player.bonuses[k.id] ?? 0}
                 lp={player.tierLP[k.id] ?? null}
+                synced={player.synced?.[k.id]}
               />
             ))}
           </div>
