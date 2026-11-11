@@ -1,5 +1,5 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { SYNC_WINDOW_MS, syncPlayers } from "./tier-sync";
+import { SYNC_WINDOW_MS, SyncPayloadError, syncPlayers } from "./tier-sync";
 import type { Json } from "@/integrations/supabase/types";
 
 export function verifySyncSignature(raw: string, timestamp: string | null, signature: string | null, secret: string, now = Date.now()) {
@@ -20,7 +20,11 @@ export async function handleTierSync(request: Request, secret: string | undefine
   }
   let players;
   try { players = syncPlayers(JSON.parse(raw)); }
-  catch { return Response.json({ error: "Invalid tier payload" }, { status: 400 }); }
+  catch (error) {
+    const field = error instanceof SyncPayloadError ? error.field : "body";
+    return Response.json({ error: "Invalid tier payload", field }, { status: 400 });
+  }
+  if (players.length === 0) return Response.json({ ok: true });
   try {
     const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
     const { data: existing, error: readError } = await db.from("players").select("username, mc_uuid");

@@ -55,3 +55,20 @@ describe("Discord tier synchronization", () => {
     expect(db.rpc).toHaveBeenCalledWith("apply_discord_tier_sync", { payload: [expect.objectContaining({ tier: "LT3", totalLp: 375, uuid: "a".repeat(32) })] });
   });
 });
+describe("Bot payload shapes", () => {
+  const steve = { username: "Steve", kit: "sword", kitName: "Sword", tier: "HT4", totalLp: 310, categories: { Gamesense: 90 }, testedAt: 1762860000000, discordId: "987654321" };
+  it("accepts the documented result body", () => {
+    expect(syncPlayers({ event: "result", guildId: "123", ...steve, previousTier: "LT4", previousLp: 260, region: "EU", testerId: "555" }, now)).toHaveLength(1);
+  });
+  it("accepts highresult without LP or categories, and minimal fields", () => {
+    expect(syncPlayers({ event: "highresult", username: "Steve", kit: "sword", kitName: "Sword", tier: "HT2" }, now)).toHaveLength(1);
+  });
+  it("accepts snapshot with top-level guildId and empty players", () => {
+    expect(syncPlayers({ event: "snapshot", guildId: "123", batch: 1, batches: 1, players: [steve] }, now)[0]?.guildId).toBe("123");
+    expect(syncPlayers({ event: "snapshot", players: [] }, now)).toEqual([]);
+  });
+  it("reports the failing field", () => {
+    try { syncPlayers({ event: "snapshot", players: [{ ...steve, tier: "XX" }] }, now); throw new Error("no"); }
+    catch (e) { expect((e as { field: string }).field).toBe("players[0].tier"); }
+  });
+});
