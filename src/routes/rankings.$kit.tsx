@@ -1,13 +1,13 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { Rankings } from "@/components/ladder/Rankings";
-import { kitFor } from "@/lib/kits";
+import { KITS } from "@/lib/kits";
 
 export const Route = createFileRoute("/rankings/$kit")({
   beforeLoad: ({ params }) => {
-    if (!/^[a-z0-9][a-z0-9_-]{0,39}$/.test(params.kit)) throw notFound();
+    if (!KITS.some((k) => k.id === params.kit)) throw notFound();
   },
   head: ({ params }) => {
-    const name = kitFor(params.kit).name;
+    const name = KITS.find((k) => k.id === params.kit)?.name ?? "Kit";
     return {
       meta: [
         { title: `${name} Rankings — PvP Ladder` },

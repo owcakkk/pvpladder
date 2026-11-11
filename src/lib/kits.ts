@@ -1,4 +1,4 @@
-import { Swords, type LucideIcon } from "lucide-react";
+import { type LucideIcon } from "lucide-react";
 import axeImg from "@/assets/kit-axe.png.asset.json";
 import bowcartImg from "@/assets/kit-bowcart.png.asset.json";
 import diapotImg from "@/assets/kit-diapot.png.asset.json";
@@ -19,26 +19,16 @@ export const KITS: Kit[] = [
   { id: "sword", name: "Sword", image: swordImg.url, tone: "text-region-other" },
   { id: "axe", name: "Axe", image: axeImg.url, tone: "text-silver" },
   { id: "mace", name: "Mace", image: maceImg.url, tone: "text-muted-foreground" },
-  { id: "spear-mace", name: "Spear & Mace", image: spearmaceImg.url, tone: "text-primary" },
+  { id: "spearmace", name: "Spear & Mace", image: spearmaceImg.url, tone: "text-primary" },
   { id: "uhc", name: "UHC", image: uhcImg.url, tone: "text-destructive" },
   { id: "smp", name: "SMP", image: smpImg.url, tone: "text-region-eu" },
-  { id: "diamond-smp", name: "Diamond SMP", image: diasmpImg.url, tone: "text-region-other" },
-  { id: "diamond-pot", name: "Diamond Pot", image: diapotImg.url, tone: "text-region-as" },
-  { id: "netherite-op", name: "Netherite OP", image: nethopImg.url, tone: "text-bronze" },
-  { id: "bow-cart", name: "Bow Cart", image: bowcartImg.url, tone: "text-gold" },
-  { id: "xbow-cart", name: "X-Bow Cart", image: xbowImg.url, tone: "text-region-na" },
+  { id: "diasmp", name: "Diamond SMP", image: diasmpImg.url, tone: "text-region-other" },
+  { id: "diapot", name: "Diamond Pot", image: diapotImg.url, tone: "text-region-as" },
+  { id: "nethop", name: "Netherite OP", image: nethopImg.url, tone: "text-bronze" },
+  { id: "bowcart", name: "Bow Cart", image: bowcartImg.url, tone: "text-gold" },
+  { id: "xbowcart", name: "X-Bow Cart", image: xbowImg.url, tone: "text-region-na" },
 ];
 export const OVERALL_ICON = overallImg.url;
-
-// Kits the site has no artwork for yet (e.g. new bot kits) use the bot's kitName and a generic icon.
-export const kitFor = (id: string, name?: string | null): Kit =>
-  KITS.find((kit) => kit.id === id) ?? { id, name: name || id, icon: Swords, tone: "text-muted-foreground" };
-export const allKits = (players: { tiers: Record<string, string>; synced?: Record<string, { kitName: string | null }> | undefined }[] = []): Kit[] => {
-  const extra = new Map<string, string | null>();
-  for (const p of players) for (const id of Object.keys(p.tiers))
-    if (!KITS.some((kit) => kit.id === id) && !extra.get(id)) extra.set(id, p.synced?.[id]?.kitName ?? null);
-  return [...KITS, ...[...extra].map(([id, name]) => kitFor(id, name))];
-};
 
 export const TIERS = ["HT1", "LT1", "HT2", "LT2", "HT3", "LT3", "HT4", "LT4", "HT5", "LT5"] as const;
 export type Tier = (typeof TIERS)[number];

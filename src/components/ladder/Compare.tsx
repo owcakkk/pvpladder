@@ -6,11 +6,11 @@ import { KitIcon } from "./KitIcon";
 import { Avatar } from "./Rankings";
 import { ladderQuery, type LadderPlayer } from "@/lib/ladder";
 import {
-  allKits, kitFor, isLowerTier, kitPoints, regionClass, tierBadgeClass, tierRingClass, type Tier,
+  KITS, isLowerTier, kitPoints, regionClass, tierBadgeClass, tierRingClass, type Tier,
 } from "@/lib/kits";
 
 function Side({ p, kitId, winner, reverse }: { p?: LadderPlayer | undefined; kitId: string; winner: boolean; reverse?: boolean }) {
-  const k = kitFor(kitId);
+  const k = KITS.find((x) => x.id === kitId)!;
   const tier = p?.tiers[kitId] as Tier | undefined;
   const bonus = tier && !isLowerTier(tier) ? p?.bonuses[kitId] ?? 0 : 0;
   const pts = p ? kitPoints(tier, bonus, p.tierLP[kitId]) : null;
@@ -43,7 +43,7 @@ function Side({ p, kitId, winner, reverse }: { p?: LadderPlayer | undefined; kit
 }
 
 function KitRow({ kitId, p1, p2 }: { kitId: string; p1?: LadderPlayer | undefined; p2?: LadderPlayer | undefined }) {
-  const k = kitFor(kitId);
+  const k = KITS.find((x) => x.id === kitId)!;
   const val = (p: LadderPlayer | undefined) => (p ? kitPoints(p.tiers[kitId] as Tier | undefined, p.bonuses[kitId] ?? 0, p.tierLP[kitId]) : null);
   const v1 = val(p1);
   const v2 = val(p2);
@@ -138,7 +138,7 @@ export function ComparePage({ a, b }: { a?: string | undefined; b?: string | und
             <section className="mt-4 rounded-xl border bg-panel p-4">
               <h2 className="mb-3 font-display text-sm font-bold uppercase tracking-wide text-muted-foreground">Kit by kit</h2>
               <div className="space-y-2">
-                {allKits([pa, pb].filter((x): x is LadderPlayer => !!x)).map((k) => (
+                {KITS.map((k) => (
                   <KitRow key={k.id} kitId={k.id} p1={pa} p2={pb} />
                 ))}
               </div>
