@@ -28,7 +28,7 @@ const singleSchema = playerSchema.and(z.object({ event: z.enum(["result", "highr
 const snapshotSchema = z.object({
   event: z.literal("snapshot"),
   guildId: id.nullish(),
-  players: z.array(playerSchema).max(100),
+  players: z.array(playerSchema),
   batch: z.number().int().nonnegative().nullish(),
   batches: z.number().int().positive().nullish(),
 });

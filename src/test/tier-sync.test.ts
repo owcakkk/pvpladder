@@ -72,3 +72,10 @@ describe("Bot payload shapes", () => {
     catch (e) { expect((e as { field: string }).field).toBe("players[0].tier"); }
   });
 });
+
+describe("Large snapshots", () => {
+  it("accepts more than 100 players", () => {
+    const players = Array.from({ length: 150 }, (_, i) => ({ username: `Player${i}`, kit: "sword", kitName: "Sword", tier: "HT2" }));
+    expect(syncPlayers({ event: "snapshot", players }, now)).toHaveLength(150);
+  });
+});
