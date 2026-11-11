@@ -6,12 +6,11 @@ import { KitIcon } from "./KitIcon";
 import { Avatar } from "./Rankings";
 import { ladderQuery, type LadderPlayer } from "@/lib/ladder";
 import {
-  KITS, compareKitsByTier, isLowerTier, kitPoints, regionClass, tierBadgeClass, tierRingClass, type Tier,
+  allKits, kitFor, compareKitsByTier, isLowerTier, kitPoints, regionClass, tierBadgeClass, tierRingClass, type Tier,
 } from "@/lib/kits";
 
 function KitCard({ kitId, tier, bonus, lp, synced }: { kitId: string; tier?: Tier | undefined; bonus: number; lp: number | null; synced?: NonNullable<LadderPlayer["synced"]>[string] | undefined }) {
-  const k = KITS.find((x) => x.id === kitId);
-  if (!k) return null;
+  const k = kitFor(kitId, synced?.kitName);
   const points = kitPoints(tier, tier && !isLowerTier(tier) ? bonus : 0, lp);
   return (
     <div className="rounded-lg border bg-row px-4 py-3">
@@ -51,12 +50,12 @@ function KitCard({ kitId, tier, bonus, lp, synced }: { kitId: string; tier?: Tie
 
 export function PlayerProfile({ player }: { player: LadderPlayer }) {
   const byTier = compareKitsByTier(player.tiers, player.bonuses, player.tierLP);
-  const ranked = KITS
+  const ranked = allKits([player])
     .filter((k) => player.tiers[k.id])
     .sort((a, b) => byTier(a.id, b.id));
 
 
-  const unranked = KITS.filter((k) => !player.tiers[k.id]);
+  const unranked = allKits([player]).filter((k) => !player.tiers[k.id]);
 
   return (
     <div className="min-h-screen px-4 pb-16">

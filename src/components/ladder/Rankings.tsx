@@ -4,7 +4,7 @@ import { Header } from "./Header";
 import { KitIcon } from "./KitIcon";
 import { ladderQuery, type LadderPlayer } from "@/lib/ladder";
 import {
-  KITS, OVERALL_ICON, avatarFallback, avatarUrl,
+  allKits, kitFor, OVERALL_ICON, avatarFallback, avatarUrl,
   regionClass, tierBadgeClass, tierRingClass, kitPoints, isLowerTier,
   bestTierRank, bestTierPoints, compareKitsByTier, compareTierResults,
 } from "@/lib/kits";
@@ -25,7 +25,7 @@ export function Avatar({ p, className }: { p: { username: string; mc_uuid: strin
   );
 }
 
-function KitTabs({ kit }: { kit?: string | undefined }) {
+function KitTabs({ kit, players }: { kit?: string | undefined; players: LadderPlayer[] }) {
   return (
     <div className="flex flex-wrap justify-center gap-2">
       <Link
@@ -34,7 +34,7 @@ function KitTabs({ kit }: { kit?: string | undefined }) {
       >
         <KitIcon kit={{ id: "overall", name: "Overall", image: OVERALL_ICON, tone: "text-gold" }} className="h-6 w-6 text-gold" /> OVERALL
       </Link>
-      {KITS.map((k) => (
+      {allKits(players).map((k) => (
         <Link
           key={k.id}
           to="/rankings/$kit"
@@ -50,9 +50,8 @@ function KitTabs({ kit }: { kit?: string | undefined }) {
   );
 }
 
-function TierChip({ kitId, tier }: { kitId: string; tier?: string | undefined }) {
-  const k = KITS.find((x) => x.id === kitId);
-  if (!k) return null;
+function TierChip({ kitId, tier, name }: { kitId: string; tier?: string | undefined; name?: string | null | undefined }) {
+  const k = kitFor(kitId, name);
   return (
     <div className="flex flex-col items-center gap-0.5" title={`${k.name}: ${tier ?? "Unranked"}`}>
       <span className={`grid h-8 w-8 place-items-center rounded-full bg-background ring-2 ${tier ? tierRingClass(tier) : "ring-low opacity-50"}`}>
@@ -76,7 +75,7 @@ function Row({ p, i, kit }: { p: LadderPlayer; i: number; kit?: string | undefin
   const byTier = compareKitsByTier(p.tiers, p.bonuses, p.tierLP);
   const sorted = Object.entries(p.tiers).sort((a, b) => byTier(a[0], b[0]));
 
-  const unranked = KITS.filter((k) => !p.tiers[k.id]).map((k) => [k.id, undefined] as const);
+  const unranked = allKits([p]).filter((k) => !p.tiers[k.id]).map((k) => [k.id, undefined] as const);
   return (
     <Link
       to="/players/$playerId"
@@ -98,9 +97,9 @@ function Row({ p, i, kit }: { p: LadderPlayer; i: number; kit?: string | undefin
       </div>
       <div className={`${kit ? "flex" : "hidden lg:flex"} flex-1 flex-wrap items-center justify-center gap-2 px-4 py-2`}>
         {kit ? (
-          <TierChip kitId={kit} tier={p.tiers[kit]} />
+          <TierChip kitId={kit} tier={p.tiers[kit]} name={p.synced?.[kit]?.kitName} />
         ) : (
-          [...sorted, ...unranked].map(([k, t]) => <TierChip key={k} kitId={k} tier={t} />)
+          [...sorted, ...unranked].map(([k, t]) => <TierChip key={k} kitId={k} tier={t} name={p.synced?.[k]?.kitName} />)
         )}
       </div>
     </Link>
@@ -126,7 +125,7 @@ export function Rankings({ kit, q }: { kit?: string | undefined; q?: string | un
     <div className="min-h-screen px-4 pb-16">
       <Header />
       <main className="mx-auto mt-8 max-w-6xl rounded-xl border bg-panel p-5">
-        <KitTabs kit={kit} />
+        <KitTabs kit={kit} players={data ?? []} />
         <div className="mt-4 hidden grid-cols-[8rem_16rem_6rem_1fr] px-4 pb-2 text-sm font-semibold text-muted-foreground lg:grid">
           <span className="pl-4">#</span><span className="pl-4">Player</span><span>Region</span><span className="text-center">Tiers</span>
         </div>
