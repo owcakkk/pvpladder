@@ -25,6 +25,9 @@ jobs:
         env:
           PAGES_BASE: /${{ github.event.repository.name }}/
         run: bunx vite build --config vite.pages.config.ts
+      - name: Point Lovable-hosted images at the Lovable domain
+        run: |
+          sed -i "s#\([\`\"']\)/__l5e/#\1https://pvpladder.lovable.app/__l5e/#g" .output/public/assets/*.js .output/public/index.html
       - name: SPA fallback for direct links
         run: |
           cp .output/public/index.html .output/public/404.html
