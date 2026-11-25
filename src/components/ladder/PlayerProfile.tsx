@@ -28,7 +28,7 @@ function KitCard({ kitId, tier, bonus, lp, synced }: { kitId: string; tier?: Tie
         </div>
       </div>
       <div className="text-right">
-        <span className="block font-display text-xl font-black text-primary">{synced ? synced.lp == null ? "-" : `${synced.lp} LP` : `${points} LP`}</span>
+        <span className="block font-display text-xl font-black text-primary">{synced && synced.lp != null ? `${synced.lp} LP` : `${points} LP`}</span>
         <span className="text-xs font-semibold text-muted-foreground">
           {synced ? new Date(synced.testedAt).toLocaleDateString("en-GB", { timeZone: "UTC" }) : tier
             ? isLowerTier(tier)
