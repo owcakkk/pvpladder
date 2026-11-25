@@ -194,8 +194,9 @@ function AdminPanel() {
               </div>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
                 {KITS.map((k) => (
-                  <TierEditor key={`${k.id}-${p.tiers[k.id]}-${p.tierLP[k.id]}-${p.bonuses[k.id]}`} playerId={p.id} kit={k}
-                    tier={p.tiers[k.id]} lp={p.tierLP[k.id] ?? null} bonus={p.bonuses[k.id] ?? 0} refresh={refresh} />
+                  <TierEditor key={`${k.id}-${p.tiers[k.id]}-${p.tierLP[k.id]}-${p.bonuses[k.id]}-${JSON.stringify(p.synced?.[k.id]?.categories ?? null)}`} playerId={p.id} kit={k}
+                    tier={p.tiers[k.id]} lp={p.tierLP[k.id] ?? null} bonus={p.bonuses[k.id] ?? 0}
+                    categories={p.synced?.[k.id]?.categories ?? null} refresh={refresh} />
                 ))}
               </div>
             </div>
