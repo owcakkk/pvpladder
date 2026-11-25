@@ -30,6 +30,18 @@ export const KITS: Kit[] = [
 ];
 export const OVERALL_ICON = overallImg.url;
 
+// Category names offered in the staff panel when a kit has no bot categories yet
+// (e.g. a tier that was added by hand). Edit the lists here; staff can also add
+// custom categories. Kits with an empty list start with no categories.
+export const KIT_CATEGORIES: Record<string, string[]> = {
+  sword: ["Melee", "Movement", "Gamesense"],
+  axe: ["Melee", "Movement", "Gamesense"],
+  mace: ["Utility", "Gamesense", "Techniques", "Ground & Air"],
+  spearmace: ["Utility", "Movement", "Gamesense", "Techniques"],
+  diasmp: ["Melee", "Utility", "Movement", "Gamesense"],
+  uhc: [], smp: [], diapot: [], nethop: [], bowcart: [], xbowcart: [],
+};
+
 export const TIERS = ["HT1", "LT1", "HT2", "LT2", "HT3", "LT3", "HT4", "LT4", "HT5", "LT5"] as const;
 export type Tier = (typeof TIERS)[number];
 

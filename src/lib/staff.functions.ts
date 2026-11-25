@@ -172,14 +172,14 @@ export const setCategoryPoints = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => {
     const db = await requireStaff();
-    const { data: row, error: readError } = await db.from("player_tiers").select("tier")
+    const { data: row, error: readError } = await db.from("player_tiers").select("tier, tested_at")
       .eq("player_id", data.playerId).eq("kit", data.kit).maybeSingle();
     if (readError) throw new Error("Couldn't read tier");
     if (!row) throw new Error("Assign a tier first");
     if (!isLowerTier(row.tier)) throw new Error("Category LP can only be edited for LT3 to LT5 kits");
     const tier = tierForLP(data.total);
     const { error } = await db.from("player_tiers")
-      .update({ categories: data.categories, total_lp: data.total, tier_lp: data.total, tier, updated_at: new Date().toISOString() })
+      .update({ categories: data.categories, total_lp: data.total, tier_lp: data.total, tier, tested_at: row.tested_at ?? Date.now(), updated_at: new Date().toISOString() })
       .eq("player_id", data.playerId).eq("kit", data.kit);
     if (error) throw new Error("Couldn't save category LP");
     return { total: data.total, tier };
