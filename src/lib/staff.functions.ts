@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { useSession } from "@tanstack/react-start/server";
 import { createHash, pbkdf2Sync, randomBytes, timingSafeEqual } from "node:crypto";
-import { DEFENCE_POINTS, KITS, REGIONS, TIERS, validateTierLP } from "./kits";
+import { DEFENCE_POINTS, KITS, REGIONS, TIERS, isLowerTier, tierForLP, validateTierLP } from "./kits";
 
 type StaffSession = { staff?: boolean; v?: number };
 
@@ -153,6 +153,36 @@ export const setTier = createServerFn({ method: "POST" })
       : await db.from("player_tiers").upsert({ player_id: data.playerId, kit: data.kit, tier: data.tier, tier_lp: data.tierLP, total_lp: null, categories: null, tested_at: null, updated_at: new Date().toISOString() });
     if (error) throw new Error("Couldn't save tier");
     return { ok: true };
+  });
+
+export const setCategoryPoints = createServerFn({ method: "POST" })
+  .inputValidator((d: { playerId: string; kit: string; categories: Record<string, number> }) => {
+    if (!KITS.some((k) => k.id === d.kit)) throw new Error("Invalid kit");
+    const entries = Object.entries(d.categories ?? {});
+    if (entries.length === 0 || entries.length > 20) throw new Error("Invalid categories");
+    const clean: Record<string, number> = {};
+    for (const [name, value] of entries) {
+      if (!name || name.length > 40) throw new Error("Invalid category name");
+      if (!Number.isInteger(value) || value < 0 || value > 400) throw new Error("Category points must be whole numbers from 0 to 400");
+      clean[name] = value;
+    }
+    const total = Object.values(clean).reduce((sum, value) => sum + value, 0);
+    if (total > 400) throw new Error("Category total can't exceed 400 LP (LT3 is the highest tier with category LP)");
+    return { playerId: d.playerId, kit: d.kit, categories: clean, total };
+  })
+  .handler(async ({ data }) => {
+    const db = await requireStaff();
+    const { data: row, error: readError } = await db.from("player_tiers").select("tier")
+      .eq("player_id", data.playerId).eq("kit", data.kit).maybeSingle();
+    if (readError) throw new Error("Couldn't read tier");
+    if (!row) throw new Error("Assign a tier first");
+    if (!isLowerTier(row.tier)) throw new Error("Category LP can only be edited for LT3 to LT5 kits");
+    const tier = tierForLP(data.total);
+    const { error } = await db.from("player_tiers")
+      .update({ categories: data.categories, total_lp: data.total, tier_lp: data.total, tier, updated_at: new Date().toISOString() })
+      .eq("player_id", data.playerId).eq("kit", data.kit);
+    if (error) throw new Error("Couldn't save category LP");
+    return { total: data.total, tier };
   });
 
 export const updateRegion = createServerFn({ method: "POST" })
