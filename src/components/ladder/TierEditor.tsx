@@ -12,7 +12,10 @@ import { setTier } from "@/lib/staff.functions";
 export function TierEditor({ playerId, kit, tier, lp, bonus, categories, refresh }: {
   playerId: string; kit: Kit; tier?: string | undefined; lp: number | null; bonus: number; categories?: unknown; refresh: () => Promise<unknown>;
 }) {
-  const editableCategories = tier && isLowerTier(tier) ? numericCategories(categories) : null;
+  // Show the category editor for LT3-LT5 kits: bot-synced ones with numeric categories,
+  // and manually added ones that have no categories yet.
+  const editableCategories = tier && isLowerTier(tier) && categories != null ? numericCategories(categories) : null;
+  const canEditCategories = !!tier && isLowerTier(tier) && (categories == null || editableCategories != null);
   const [selected, setSelected] = useState(tier ?? "");
   const [value, setValue] = useState(lp == null ? "" : String(lp));
   const [busy, setBusy] = useState(false);
@@ -49,7 +52,7 @@ export function TierEditor({ playerId, kit, tier, lp, bonus, categories, refresh
           className="min-w-0 w-20 rounded border bg-background px-2 py-1 text-foreground" />
         <span>{range?.min}–{range?.max} LP</span>
       </label>}
-      {editableCategories && lower && selected === tier && <CategoryEditor key={JSON.stringify(editableCategories)} playerId={playerId} kit={kit.id} categories={editableCategories} refresh={refresh} />}
+      {canEditCategories && lower && selected === tier && <CategoryEditor key={JSON.stringify(categories ?? null)} playerId={playerId} kit={kit.id} categories={editableCategories} currentLP={lp} refresh={refresh} />}
       {!lower && selected && <BonusEditor playerId={playerId} kit={kit.id} bonus={bonus} disabled={!tier || isLowerTier(tier)} refresh={refresh} />}
     </div>
   );
