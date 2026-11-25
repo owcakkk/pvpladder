@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { SYNC_WINDOW_MS, SyncPayloadError, syncPlayers } from "./tier-sync";
 import type { Json } from "@/integrations/supabase/types";
+import { lookupMcPlayer } from "./mc-lookup.server";
 
 export function verifySyncSignature(raw: string, timestamp: string | null, signature: string | null, secret: string, now = Date.now()) {
   if (!timestamp || !/^\d{1,16}$/.test(timestamp) || !signature || !/^[a-fA-F0-9]{64}$/.test(signature)) return false;
@@ -35,16 +36,25 @@ export async function handleTierSync(request: Request, secret: string | undefine
       if (row) resolved.set(player.username.toLowerCase(), row.mc_uuid);
     }
     const missing = [...new Set(players.map((player) => player.username.toLowerCase()))].filter((name) => !resolved.has(name));
-    for (let i = 0; i < missing.length; i += 6) {
-      await Promise.all(missing.slice(i, i + 6).map(async (name) => {
-        const response = await fetch(`https://api.minecraftservices.com/minecraft/profile/lookup/name/${name}`, { signal: AbortSignal.timeout(2500) });
-        if (!response.ok) throw new Error("Minecraft identity lookup failed");
-        const identity = await response.json() as { id?: string };
-        if (!identity.id || !/^[a-fA-F0-9]{32}$/.test(identity.id)) throw new Error("Invalid Minecraft identity");
-        resolved.set(name, identity.id);
+    // Unknown players: resolve through lookupMcPlayer, which tries several
+    // sources (Crafty, Minecraft Services, Mojang, PlayerDB) instead of one.
+    const canonical = new Map<string, string>();
+    const notFound: string[] = [];
+    for (let i = 0; i < missing.length; i += 4) {
+      await Promise.all(missing.slice(i, i + 4).map(async (name) => {
+        let found: { username: string; uuid: string } | null = null;
+        try { found = await lookupMcPlayer(name); } catch { found = null; }
+        const uuid = found?.uuid.replaceAll("-", "").toLowerCase();
+        if (!found || !uuid || !/^[a-f0-9]{32}$/.test(uuid)) { notFound.push(name); return; }
+        resolved.set(name, uuid);
+        canonical.set(name, found.username);
       }));
     }
-    const payload = players.map((player) => ({ ...player, uuid: resolved.get(player.username.toLowerCase()) ?? null }));
+    if (notFound.length > 0) {
+      console.warn("Tier sync: Minecraft lookup failed for", notFound.join(", "));
+      return Response.json({ error: "Minecraft player not found", usernames: notFound }, { status: 422 });
+    }
+    const payload = players.map((player) => ({ ...player, username: canonical.get(player.username.toLowerCase()) ?? player.username, uuid: resolved.get(player.username.toLowerCase()) ?? null }));
     const { error } = await db.rpc("apply_discord_tier_sync", { payload: payload as unknown as Json });
     if (error) throw new Error("Tier write failed");
     return Response.json({ ok: true });
