@@ -6,7 +6,7 @@ import { KITS, bestTierPoints, bestTierRank, compareTierResults, kitPoints } fro
 export function sortKit(players: LadderPlayer[], kit: string): LadderPlayer[] {
   const result = (p: LadderPlayer) => ({
     tier: p.tiers[kit],
-    lp: p.synced?.[kit] ? p.synced[kit].lp : kitPoints(p.tiers[kit], p.bonuses[kit] ?? 0, p.tierLP[kit]),
+    lp: p.synced?.[kit]?.lp ?? kitPoints(p.tiers[kit], p.bonuses[kit] ?? 0, p.tierLP[kit]),
   });
   return players.filter((p) => p.tiers[kit])
     .sort((a, b) => compareTierResults(result(a), result(b)) || a.username.localeCompare(b.username));
