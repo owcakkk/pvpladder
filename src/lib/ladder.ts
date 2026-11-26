@@ -1,20 +1,9 @@
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { computePoints, type Tier } from "./kits";
-import type { Json } from "@/integrations/supabase/types";
+import { buildLadderPlayers, type LadderPlayer } from "./ladder-build";
+import { parseRankMaps, type RankMaps } from "./ranking";
 export { computePoints } from "./kits";
-
-export type LadderPlayer = {
-  id: string;
-  username: string;
-  mc_uuid: string | null;
-  region: string;
-  tiers: Record<string, Tier>;
-  bonuses: Record<string, number>;
-  tierLP: Record<string, number | null>;
-  points: number;
-  synced?: Record<string, { lp: number | null; categories: Json | null; testedAt: number; kitName: string | null }>;
-};
+export type { LadderPlayer } from "./ladder-build";
 
 export const ladderQuery = queryOptions({
   queryKey: ["ladder"],
@@ -25,18 +14,22 @@ export const ladderQuery = queryOptions({
     ]);
     if (error) throw error;
     if (e2) throw e2;
-    return (players ?? []).map((p) => {
-      const t: Record<string, Tier> = {};
-      const bonuses: Record<string, number> = {};
-      const tierLP: Record<string, number | null> = {};
-      const synced: NonNullable<LadderPlayer["synced"]> = {};
-      for (const r of tiers ?? []) if (r.player_id === p.id) {
-        t[r.kit] = r.tier as Tier;
-        bonuses[r.kit] = r.bonus_points;
-        tierLP[r.kit] = r.tier_lp;
-        if (r.tested_at != null) synced[r.kit] = { lp: r.total_lp, categories: r.categories, testedAt: r.tested_at, kitName: r.kit_name };
-      }
-      return { ...p, tiers: t, bonuses, tierLP, synced, points: computePoints(t, bonuses, tierLP) };
-    });
+    return buildLadderPlayers(players ?? [], tiers ?? []);
+  },
+});
+
+// Ranks from the newest daily snapshot that is at least ~20 hours old, used for the
+// rank-change arrows. Returns null (no arrows) if the table or a snapshot doesn't exist yet.
+export const rankBaselineQuery = queryOptions({
+  queryKey: ["rank-baseline"],
+  staleTime: 5 * 60 * 1000,
+  queryFn: async (): Promise<RankMaps | null> => {
+    try {
+      const cutoff = new Date(Date.now() - 20 * 60 * 60 * 1000).toISOString();
+      const snapshots = (supabase as unknown as { from: (table: string) => any }).from.bind(supabase) as (table: string) => any;
+      const { data, error } = await snapshots("rank_snapshots").select("ranks").lte("taken_at", cutoff).order("taken_at", { ascending: false }).limit(1);
+      if (error) return null;
+      return parseRankMaps(data?.[0]?.ranks);
+    } catch { return null; }
   },
 });
