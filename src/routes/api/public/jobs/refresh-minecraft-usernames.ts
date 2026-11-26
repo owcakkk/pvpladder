@@ -29,7 +29,17 @@ export const Route = createFileRoute("/api/public/jobs/refresh-minecraft-usernam
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { refreshMcUsernames } = await import("@/lib/mc-refresh.server");
         try {
-          return Response.json({ success: true, ...await refreshMcUsernames(supabaseAdmin) });
+          const summary = await refreshMcUsernames(supabaseAdmin);
+          // Daily rank snapshot for the rank-change arrows; never affects the refresh result.
+          let snapshot: "created" | "skipped" | "error" = "skipped";
+          try {
+            const { takeRankSnapshot } = await import("@/lib/rank-snapshot.server");
+            snapshot = await takeRankSnapshot(supabaseAdmin);
+          } catch (snapshotError) {
+            snapshot = "error";
+            console.warn("Rank snapshot failed", snapshotError);
+          }
+          return Response.json({ success: true, ...summary, snapshot });
         } catch (error) {
           console.error("Scheduled Minecraft username refresh failed", error);
           return Response.json({ error: error instanceof Error ? error.message : "Username refresh failed" }, { status: 500 });
