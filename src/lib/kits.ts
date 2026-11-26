@@ -138,9 +138,15 @@ export const regionClass = (r: string) =>
   : r === "AS" ? "text-region-as bg-region-as/15"
   : "text-region-other bg-region-other/15";
 
-// The hour is added to the URL so browsers and CDNs re-fetch the render at least hourly
-// and pick up skin changes instead of showing a stale copy.
-export const avatarUrl = (name: string, uuid?: string | null) =>
-  `https://render.crafty.gg/3d/bust/${uuid ?? name}?t=${Math.floor(Date.now() / 3600000)}`;
+// Avatars come from mc-api.io (BUST render). The hour is added to the URL so browsers
+// re-fetch the image at least hourly instead of reusing a cached copy (the service itself
+// sends a one-day cache header). UUIDs are used when known, so renamed players keep working.
+export const avatarUrl = (name: string, uuid?: string | null) => {
+  const hour = Math.floor(Date.now() / 3600000);
+  return uuid
+    ? `https://mc-api.io/render/BUST/${uuid}?size=256&t=${hour}`
+    : `https://mc-api.io/render/BUST/${encodeURIComponent(name)}/JAVA?size=256&t=${hour}`;
+};
+// Used automatically if the main render fails to load.
 export const avatarFallback = (name: string, uuid?: string | null) =>
   `https://mc-heads.net/body/${uuid ?? name}/right`;
