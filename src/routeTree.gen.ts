@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as CompareRouteImport } from './routes/compare'
+import { Route as StatsRouteImport } from './routes/stats'
 import { Route as TournamentsRouteImport } from './routes/tournaments'
 import { Route as PlayersPlayerIdRouteImport } from './routes/players.$playerId'
 import { Route as RankingsKitRouteImport } from './routes/rankings.$kit'
@@ -33,6 +34,11 @@ const AdminRoute = AdminRouteImport.update({
 const CompareRoute = CompareRouteImport.update({
   id: '/compare',
   path: '/compare',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StatsRoute = StatsRouteImport.update({
+  id: '/stats',
+  path: '/stats',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TournamentsRoute = TournamentsRouteImport.update({
@@ -76,6 +82,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/compare': typeof CompareRoute
+  '/stats': typeof StatsRoute
   '/tournaments': typeof TournamentsRouteWithChildren
   '/players/$playerId': typeof PlayersPlayerIdRoute
   '/rankings/$kit': typeof RankingsKitRoute
@@ -88,6 +95,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/compare': typeof CompareRoute
+  '/stats': typeof StatsRoute
   '/players/$playerId': typeof PlayersPlayerIdRoute
   '/rankings/$kit': typeof RankingsKitRoute
   '/tournaments/$tournamentId': typeof TournamentsTournamentIdRoute
@@ -100,6 +108,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/compare': typeof CompareRoute
+  '/stats': typeof StatsRoute
   '/tournaments': typeof TournamentsRouteWithChildren
   '/players/$playerId': typeof PlayersPlayerIdRoute
   '/rankings/$kit': typeof RankingsKitRoute
@@ -114,6 +123,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/compare'
+    | '/stats'
     | '/tournaments'
     | '/players/$playerId'
     | '/rankings/$kit'
@@ -126,6 +136,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/compare'
+    | '/stats'
     | '/players/$playerId'
     | '/rankings/$kit'
     | '/tournaments/$tournamentId'
@@ -137,6 +148,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/compare'
+    | '/stats'
     | '/tournaments'
     | '/players/$playerId'
     | '/rankings/$kit'
@@ -150,6 +162,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   CompareRoute: typeof CompareRoute
+  StatsRoute: typeof StatsRoute
   TournamentsRoute: typeof TournamentsRouteWithChildren
   PlayersPlayerIdRoute: typeof PlayersPlayerIdRoute
   RankingsKitRoute: typeof RankingsKitRoute
@@ -178,6 +191,13 @@ declare module '@tanstack/react-router' {
       path: '/compare'
       fullPath: '/compare'
       preLoaderRoute: typeof CompareRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/stats': {
+      id: '/stats'
+      path: '/stats'
+      fullPath: '/stats'
+      preLoaderRoute: typeof StatsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/tournaments': {
@@ -250,6 +270,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   CompareRoute: CompareRoute,
+  StatsRoute: StatsRoute,
   TournamentsRoute: TournamentsRouteWithChildren,
   PlayersPlayerIdRoute: PlayersPlayerIdRoute,
   RankingsKitRoute: RankingsKitRoute,
