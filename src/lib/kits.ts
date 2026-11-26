@@ -138,6 +138,9 @@ export const regionClass = (r: string) =>
   : r === "AS" ? "text-region-as bg-region-as/15"
   : "text-region-other bg-region-other/15";
 
+// The hour is added to the URL so browsers and CDNs re-fetch the render at least hourly
+// and pick up skin changes instead of showing a stale copy.
 export const avatarUrl = (name: string, uuid?: string | null) =>
-  `https://render.crafty.gg/3d/bust/${uuid ?? name}`;
-export const avatarFallback = (name: string) => `https://mc-heads.net/body/${name}/right`;
+  `https://render.crafty.gg/3d/bust/${uuid ?? name}?t=${Math.floor(Date.now() / 3600000)}`;
+export const avatarFallback = (name: string, uuid?: string | null) =>
+  `https://mc-heads.net/body/${uuid ?? name}/right`;

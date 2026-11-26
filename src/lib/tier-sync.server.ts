@@ -57,6 +57,22 @@ export async function handleTierSync(request: Request, secret: string | undefine
     const payload = players.map((player) => ({ ...player, username: canonical.get(player.username.toLowerCase()) ?? player.username, uuid: resolved.get(player.username.toLowerCase()) ?? null }));
     const { error } = await db.rpc("apply_discord_tier_sync", { payload: payload as unknown as Json });
     if (error) throw new Error("Tier write failed");
+    // The database function matches a renamed player by UUID but keeps the old
+    // name, so apply the new name here (same identity, same rows, only the name).
+    // Failures (e.g. the name is already taken) never fail the sync itself.
+    const normalize = (value: string | null) => (value ?? "").replaceAll("-", "").toLowerCase();
+    for (const player of payload) {
+      const uuid = normalize(player.uuid);
+      if (!uuid) continue;
+      const row = existing?.find((entry) => normalize(entry.mc_uuid) === uuid && entry.username !== player.username);
+      if (!row?.mc_uuid) continue;
+      try {
+        for (const table of ["players", "tournament_players"] as const) {
+          const { error: renameError } = await db.from(table).update({ username: player.username }).eq("mc_uuid", row.mc_uuid);
+          if (renameError) console.warn(`Tier sync: couldn't rename ${row.username} in ${table}`, renameError.code);
+        }
+      } catch (renameFailure) { console.warn("Tier sync: rename failed", renameFailure); }
+    }
     return Response.json({ ok: true });
   } catch {
     return Response.json({ error: "Unable to sync tiers; retry later" }, { status: 503 });
