@@ -11,29 +11,38 @@ export function normalizeMcUUID(value: string): string | null {
   return /^[a-f0-9]{32}$/.test(normalized) ? normalized : null;
 }
 
+type ProfileSource = { url: string; timeout: number; pick: (json: any) => { id?: unknown; name?: unknown } | undefined };
+
+// Looks up the current name for a permanent UUID. Mojang's own services are tried first;
+// if they fail (blocked, rate-limited or timed out from the server), community mirrors
+// are used. Every source must return the SAME UUID, so a name can never be attached to
+// the wrong account.
 export async function officialMcName(uuid: string, request: typeof fetch = fetch): Promise<string | null> {
   const normalized = normalizeMcUUID(uuid);
   if (!normalized) return null;
-  let response = await request(`https://api.minecraftservices.com/minecraft/profile/lookup/${normalized}`, {
-    headers: { accept: "application/json" }, signal: AbortSignal.timeout(2500),
-  });
-  // Minecraft Services supplies names directly; sessionserver is a second
-  // official source when the name-only service is temporarily unavailable.
-  if (!response.ok && response.status !== 429) {
-    console.warn(`Minecraft Services name lookup failed [${response.status}]: ${await response.text()}`);
-    response = await request(`https://sessionserver.mojang.com/session/minecraft/profile/${normalized}`, {
-      headers: { accept: "application/json" }, signal: AbortSignal.timeout(1200),
-    });
+  const sources: ProfileSource[] = [
+    { url: `https://api.minecraftservices.com/minecraft/profile/lookup/${normalized}`, timeout: 2500, pick: (j) => j },
+    { url: `https://sessionserver.mojang.com/session/minecraft/profile/${normalized}`, timeout: 2500, pick: (j) => j },
+    { url: `https://api.crafty.gg/api/v2/players/${normalized}`, timeout: 3000,
+      pick: (j) => (j?.data ? { id: j.data.uuid, name: j.data.username } : undefined) },
+    { url: `https://playerdb.co/api/player/minecraft/${normalized}`, timeout: 3000,
+      pick: (j) => (j?.data?.player ? { id: j.data.player.raw_id ?? j.data.player.id, name: j.data.player.username } : undefined) },
+  ];
+  for (const source of sources) {
+    let response: Response;
+    try {
+      response = await request(source.url, {
+        headers: { accept: "application/json", "user-agent": "PvPLadder/1.0" }, signal: AbortSignal.timeout(source.timeout),
+      });
+    } catch (error) { console.warn(`Minecraft name lookup error: ${source.url}`, error); continue; }
+    if (!response.ok) { console.warn(`Minecraft name lookup failed [${response.status}]: ${source.url}`); continue; }
+    let profile: { id?: unknown; name?: unknown } | undefined;
+    try { profile = source.pick(await response.json()); } catch { continue; }
+    if (!profile || typeof profile.id !== "string" || typeof profile.name !== "string") continue;
+    if (normalizeMcUUID(profile.id) !== normalized) return null;
+    return /^[A-Za-z0-9_]{1,16}$/.test(profile.name) ? profile.name : null;
   }
-  if (!response.ok) {
-    const body = await response.text();
-    console.warn(`Minecraft profile lookup failed [${response.status}]: ${body}`);
-    return null;
-  }
-  const profile: unknown = await response.json();
-  if (!profile || typeof profile !== "object" || !("id" in profile) || !("name" in profile)) return null;
-  if (typeof profile.id !== "string" || normalizeMcUUID(profile.id) !== normalized) return null;
-  return typeof profile.name === "string" && /^[A-Za-z0-9_]{1,16}$/.test(profile.name) ? profile.name : null;
+  return null;
 }
 
 // Only called after the scheduled caller is authenticated. Never rewrite UUIDs,
