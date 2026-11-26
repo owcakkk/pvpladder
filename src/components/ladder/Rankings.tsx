@@ -19,7 +19,7 @@ export function Avatar({ p, className }: { p: { username: string; mc_uuid: strin
       className={className}
       onError={(e) => {
         const img = e.currentTarget;
-        if (!img.dataset["fb"]) { img.dataset["fb"] = "1"; img.src = avatarFallback(p.username); }
+        if (!img.dataset["fb"]) { img.dataset["fb"] = "1"; img.src = avatarFallback(p.username, p.mc_uuid); }
       }}
     />
   );
