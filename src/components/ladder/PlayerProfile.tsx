@@ -1,18 +1,20 @@
 import { Link } from "@tanstack/react-router";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { TrendingUp } from "lucide-react";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { ArrowLeft, Swords } from "lucide-react";
 import { Header } from "./Header";
 import { KitIcon } from "./KitIcon";
 import { Avatar } from "./Rankings";
 import { RankBadge, RankChangeChip } from "./RankBadge";
+import { TierJourneyDialog } from "./TierJourney";
 import { ladderQuery, rankBaselineQuery, type LadderPlayer } from "@/lib/ladder";
 import { rankDelta, rankMaps, type RankDelta, type RankMaps } from "@/lib/ranking";
 import {
   KITS, compareKitsByTier, isLowerTier, kitPoints, regionClass, tierBadgeClass, tierRingClass, type Tier,
 } from "@/lib/kits";
 
-function KitCard({ kitId, tier, bonus, lp, synced, rank, delta }: { kitId: string; tier?: Tier | undefined; bonus: number; lp: number | null; synced?: NonNullable<LadderPlayer["synced"]>[string] | undefined; rank?: number | undefined; delta?: RankDelta }) {
+function KitCard({ kitId, tier, bonus, lp, synced, rank, delta, onJourney }: { kitId: string; tier?: Tier | undefined; bonus: number; lp: number | null; synced?: NonNullable<LadderPlayer["synced"]>[string] | undefined; rank?: number | undefined; delta?: RankDelta; onJourney?: (() => void) | undefined }) {
   const k = KITS.find((x) => x.id === kitId);
   if (!k) return null;
   const points = kitPoints(tier, tier && !isLowerTier(tier) ? bonus : 0, lp);
@@ -45,6 +47,11 @@ function KitCard({ kitId, tier, bonus, lp, synced, rank, delta }: { kitId: strin
         </span>
       </div>
       </div>
+      {tier && onJourney && (
+        <button type="button" onClick={onJourney} className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline">
+          <TrendingUp className="h-3 w-3" /> Tier journey
+        </button>
+      )}
       {synced?.categories != null && <dl className="mt-3 space-y-1 border-t pt-2 text-xs">
         {Object.entries(synced.categories).map(([name, value]) => <div key={name} className="flex flex-wrap justify-between gap-2">
           <dt className="break-all text-muted-foreground">{name}</dt><dd className="max-w-full break-all font-semibold">{typeof value === "object" ? JSON.stringify(value) : String(value)}</dd>
@@ -62,6 +69,8 @@ export function PlayerProfile({ player, ranks, baseline }: { player: LadderPlaye
 
 
   const unranked = KITS.filter((k) => !player.tiers[k.id]);
+  const [journeyKit, setJourneyKit] = useState<string | null>(null);
+  const journey = journeyKit ? KITS.find((k) => k.id === journeyKit) : undefined;
   const overallRank = ranks?.overall[player.id];
   const kitRank = (kitId: string) => ranks?.kits[kitId]?.[player.id];
   const kitDelta = (kitId: string) => { const r = kitRank(kitId); return r == null ? null : rankDelta(baseline?.kits[kitId], player.id, r); };
@@ -111,11 +120,13 @@ export function PlayerProfile({ player, ranks, baseline }: { player: LadderPlaye
                 synced={player.synced?.[k.id]}
                 rank={kitRank(k.id)}
                 delta={kitDelta(k.id)}
+                onJourney={() => setJourneyKit(k.id)}
               />
             ))}
           </div>
         </section>
       </main>
+      {journey && <TierJourneyDialog playerId={player.id} playerName={player.username} kit={journey} onClose={() => setJourneyKit(null)} />}
     </div>
   );
 }
