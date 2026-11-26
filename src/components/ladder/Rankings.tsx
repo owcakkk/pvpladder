@@ -73,7 +73,8 @@ function rankBg(i: number) {
 
 function Row({ p, i, kit, delta }: { p: LadderPlayer; i: number; kit?: string | undefined; delta?: RankDelta }) {
   const points = kit ? kitPoints(p.tiers[kit], p.bonuses[kit] ?? 0, p.tierLP[kit]) : p.points;
-  const displayLP = kit && p.synced?.[kit] ? p.synced[kit].lp : points;
+  const syncedLP = kit ? p.synced?.[kit]?.lp : null;
+  const displayLP = syncedLP != null ? syncedLP : points;
   const bonus = kit ? (isLowerTier(p.tiers[kit]) ? 0 : p.bonuses[kit] ?? 0) : Object.entries(p.bonuses).reduce((sum, [id, value]) => sum + (isLowerTier(p.tiers[id]) ? 0 : value), 0);
   const byTier = compareKitsByTier(p.tiers, p.bonuses, p.tierLP);
   const sorted = Object.entries(p.tiers).sort((a, b) => byTier(a[0], b[0]));
