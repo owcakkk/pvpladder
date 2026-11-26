@@ -148,10 +148,15 @@ export const setTier = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => {
     const db = await requireStaff();
+    const { data: previous } = await db.from("player_tiers").select("tier").eq("player_id", data.playerId).eq("kit", data.kit).maybeSingle();
     const { error } = data.tier === ""
       ? await db.from("player_tiers").delete().eq("player_id", data.playerId).eq("kit", data.kit)
       : await db.from("player_tiers").upsert({ player_id: data.playerId, kit: data.kit, tier: data.tier, tier_lp: data.tierLP, total_lp: null, categories: null, tested_at: null, updated_at: new Date().toISOString() });
     if (error) throw new Error("Couldn't save tier");
+    if (data.tier !== "" && previous?.tier !== data.tier) {
+      const { recordTierHistory } = await import("./tier-history.server");
+      await recordTierHistory(db, [{ player_id: data.playerId, kit: data.kit, tier: data.tier, achieved_at: Date.now(), source: "staff" }]);
+    }
     return { ok: true };
   });
 
@@ -182,6 +187,10 @@ export const setCategoryPoints = createServerFn({ method: "POST" })
       .update({ categories: data.categories, total_lp: data.total, tier_lp: data.total, tier, tested_at: row.tested_at ?? Date.now(), updated_at: new Date().toISOString() })
       .eq("player_id", data.playerId).eq("kit", data.kit);
     if (error) throw new Error("Couldn't save category LP");
+    if (row.tier !== tier) {
+      const { recordTierHistory } = await import("./tier-history.server");
+      await recordTierHistory(db, [{ player_id: data.playerId, kit: data.kit, tier, achieved_at: Date.now(), source: "staff" }]);
+    }
     return { total: data.total, tier };
   });
 

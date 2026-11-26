@@ -2,6 +2,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { SYNC_WINDOW_MS, SyncPayloadError, syncPlayers } from "./tier-sync";
 import type { Json } from "@/integrations/supabase/types";
 import { lookupMcPlayer } from "./mc-lookup.server";
+import { recordTierHistory } from "./tier-history.server";
 
 export function verifySyncSignature(raw: string, timestamp: string | null, signature: string | null, secret: string, now = Date.now()) {
   if (!timestamp || !/^\d{1,16}$/.test(timestamp) || !signature || !/^[a-fA-F0-9]{64}$/.test(signature)) return false;
@@ -73,6 +74,23 @@ export async function handleTierSync(request: Request, secret: string | undefine
         }
       } catch (renameFailure) { console.warn("Tier sync: rename failed", renameFailure); }
     }
+    // Keep a history of every synced result for the Tier Journey chart (never fails the sync).
+    try {
+      const { data: fresh } = await db.from("players").select("id, username");
+      const idByName = new Map((fresh ?? []).map((row) => [row.username.toLowerCase(), row.id]));
+      const wanted = new Set<string>();
+      for (const player of payload) {
+        const id = idByName.get(player.username.toLowerCase());
+        if (id) wanted.add(`${id}:${player.kit}`);
+      }
+      const ids = [...new Set([...wanted].map((key) => key.split(":")[0]!))];
+      if (ids.length > 0) {
+        const { data: rows } = await db.from("player_tiers").select("player_id, kit, tier, tested_at").in("player_id", ids);
+        await recordTierHistory(db, (rows ?? [])
+          .filter((row) => row.tested_at != null && wanted.has(`${row.player_id}:${row.kit}`))
+          .map((row) => ({ player_id: row.player_id, kit: row.kit, tier: row.tier, achieved_at: row.tested_at as number, source: "bot" as const })));
+      }
+    } catch (historyError) { console.warn("Tier sync: history step failed", historyError); }
     return Response.json({ ok: true });
   } catch {
     return Response.json({ error: "Unable to sync tiers; retry later" }, { status: 503 });
