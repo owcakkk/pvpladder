@@ -2,11 +2,13 @@ import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Header } from "./Header";
 import { KitIcon } from "./KitIcon";
-import { ladderQuery, type LadderPlayer } from "@/lib/ladder";
+import { ladderQuery, rankBaselineQuery, type LadderPlayer } from "@/lib/ladder";
+import { rankDelta, sortKit, sortOverall, type RankDelta } from "@/lib/ranking";
+import { RankChangeChip } from "./RankBadge";
 import {
   KITS, OVERALL_ICON, avatarFallback, avatarUrl,
   regionClass, tierBadgeClass, tierRingClass, kitPoints, isLowerTier,
-  bestTierRank, bestTierPoints, compareKitsByTier, compareTierResults,
+  compareKitsByTier,
 } from "@/lib/kits";
 
 
@@ -69,7 +71,7 @@ function rankBg(i: number) {
   return i === 0 ? "bg-rank-1" : i === 1 ? "bg-rank-2" : i === 2 ? "bg-rank-3" : "bg-rank-n";
 }
 
-function Row({ p, i, kit }: { p: LadderPlayer; i: number; kit?: string | undefined }) {
+function Row({ p, i, kit, delta }: { p: LadderPlayer; i: number; kit?: string | undefined; delta?: RankDelta }) {
   const points = kit ? kitPoints(p.tiers[kit], p.bonuses[kit] ?? 0, p.tierLP[kit]) : p.points;
   const displayLP = kit && p.synced?.[kit] ? p.synced[kit].lp : points;
   const bonus = kit ? (isLowerTier(p.tiers[kit]) ? 0 : p.bonuses[kit] ?? 0) : Object.entries(p.bonuses).reduce((sum, [id, value]) => sum + (isLowerTier(p.tiers[id]) ? 0 : value), 0);
@@ -91,6 +93,7 @@ function Row({ p, i, kit }: { p: LadderPlayer; i: number; kit?: string | undefin
         <span className="truncate font-display text-xl font-bold">{p.username}</span>
         <span className="text-xs font-semibold text-muted-foreground">
           <span className="text-primary">◆</span> <span title={`Base: ${points - bonus} LP · Bonus: ${bonus > 0 ? "+" : ""}${bonus} LP`}>{displayLP == null ? "-" : `${displayLP} LP`}</span>
+          <RankChangeChip delta={delta ?? null} className="ml-2" />
         </span>
       </div>
       <div className="flex items-center border-x px-4">
@@ -109,15 +112,9 @@ function Row({ p, i, kit }: { p: LadderPlayer; i: number; kit?: string | undefin
 
 export function Rankings({ kit, q }: { kit?: string | undefined; q?: string | undefined }) {
   const { data, isLoading, error } = useQuery({ ...ladderQuery, refetchInterval: 15000 });
-  let list = data ?? [];
-  if (kit) {
-    const result = (p: LadderPlayer) => ({ tier: p.tiers[kit], lp: p.synced?.[kit] ? p.synced[kit].lp : kitPoints(p.tiers[kit], p.bonuses[kit] ?? 0, p.tierLP[kit]) });
-    list = list.filter((p) => p.tiers[kit]).sort((a, b) => compareTierResults(result(a), result(b)) || a.username.localeCompare(b.username));
-  } else list = [...list].sort((a, b) =>
-    b.points - a.points
-    || bestTierRank(a.tiers) - bestTierRank(b.tiers)
-    || bestTierPoints(b.tiers, b.bonuses, b.tierLP) - bestTierPoints(a.tiers, a.bonuses, a.tierLP)
-    || a.username.localeCompare(b.username));
+  const { data: baseline } = useQuery(rankBaselineQuery);
+  const list = kit ? sortKit(data ?? [], kit) : sortOverall(data ?? []);
+  const baselineMap = kit ? baseline?.kits[kit] : baseline?.overall;
 
   const ranked = list.map((p, i) => ({ p, i }));
   const shown = q ? ranked.filter(({ p }) => p.username.toLowerCase().includes(q.toLowerCase())) : ranked;
@@ -134,7 +131,7 @@ export function Rankings({ kit, q }: { kit?: string | undefined; q?: string | un
           {isLoading && <p className="py-10 text-center text-muted-foreground">Loading rankings…</p>}
           {error && <p className="py-10 text-center text-destructive">Couldn't load rankings.</p>}
           {!isLoading && shown.length === 0 && <p className="py-10 text-center text-muted-foreground">No players found.</p>}
-          {shown.map(({ p, i }) => <Row key={p.id} p={p} i={i} kit={kit} />)}
+          {shown.map(({ p, i }) => <Row key={p.id} p={p} i={i} kit={kit} delta={rankDelta(baselineMap, p.id, i + 1)} />)}
         </div>
       </main>
     </div>

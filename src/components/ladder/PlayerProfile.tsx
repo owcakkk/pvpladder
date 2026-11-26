@@ -1,15 +1,18 @@
 import { Link } from "@tanstack/react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { ArrowLeft, Swords } from "lucide-react";
 import { Header } from "./Header";
 import { KitIcon } from "./KitIcon";
 import { Avatar } from "./Rankings";
-import { ladderQuery, type LadderPlayer } from "@/lib/ladder";
+import { RankBadge, RankChangeChip } from "./RankBadge";
+import { ladderQuery, rankBaselineQuery, type LadderPlayer } from "@/lib/ladder";
+import { rankDelta, rankMaps, type RankDelta, type RankMaps } from "@/lib/ranking";
 import {
   KITS, compareKitsByTier, isLowerTier, kitPoints, regionClass, tierBadgeClass, tierRingClass, type Tier,
 } from "@/lib/kits";
 
-function KitCard({ kitId, tier, bonus, lp, synced }: { kitId: string; tier?: Tier | undefined; bonus: number; lp: number | null; synced?: NonNullable<LadderPlayer["synced"]>[string] | undefined }) {
+function KitCard({ kitId, tier, bonus, lp, synced, rank, delta }: { kitId: string; tier?: Tier | undefined; bonus: number; lp: number | null; synced?: NonNullable<LadderPlayer["synced"]>[string] | undefined; rank?: number | undefined; delta?: RankDelta }) {
   const k = KITS.find((x) => x.id === kitId);
   if (!k) return null;
   const points = kitPoints(tier, tier && !isLowerTier(tier) ? bonus : 0, lp);
@@ -25,6 +28,8 @@ function KitCard({ kitId, tier, bonus, lp, synced }: { kitId: string; tier?: Tie
           <span className={`inline-block rounded-md px-1.5 text-center font-display text-xs font-bold ${tierBadgeClass(tier)}`}>
             {tier ?? "Unranked"}
           </span>
+          {rank != null && <span className="ml-1.5 text-xs font-bold text-muted-foreground" title={`Rank #${rank} in ${k.name}`}>#{rank}</span>}
+          <RankChangeChip delta={delta ?? null} className="ml-1" />
         </div>
       </div>
       <div className="text-right">
@@ -49,7 +54,7 @@ function KitCard({ kitId, tier, bonus, lp, synced }: { kitId: string; tier?: Tie
   );
 }
 
-export function PlayerProfile({ player }: { player: LadderPlayer }) {
+export function PlayerProfile({ player, ranks, baseline }: { player: LadderPlayer; ranks?: RankMaps | undefined; baseline?: RankMaps | null | undefined }) {
   const byTier = compareKitsByTier(player.tiers, player.bonuses, player.tierLP);
   const ranked = KITS
     .filter((k) => player.tiers[k.id])
@@ -57,6 +62,11 @@ export function PlayerProfile({ player }: { player: LadderPlayer }) {
 
 
   const unranked = KITS.filter((k) => !player.tiers[k.id]);
+  const overallRank = ranks?.overall[player.id];
+  const kitRank = (kitId: string) => ranks?.kits[kitId]?.[player.id];
+  const kitDelta = (kitId: string) => { const r = kitRank(kitId); return r == null ? null : rankDelta(baseline?.kits[kitId], player.id, r); };
+  const bestKits = ranked.flatMap((k) => { const r = kitRank(k.id); return r == null ? [] : [{ k, r }]; })
+    .sort((a, b) => a.r - b.r).slice(0, 4);
 
   return (
     <div className="min-h-screen px-4 pb-16">
@@ -81,6 +91,12 @@ export function PlayerProfile({ player }: { player: LadderPlayer }) {
                 </span>
                 <span className="font-display text-lg font-bold text-primary">◆ {player.points} LP</span>
               </div>
+              {overallRank != null && (
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <RankBadge rank={overallRank} label="Overall" delta={baseline ? rankDelta(baseline.overall, player.id, overallRank) : null} />
+                  {bestKits.map(({ k, r }) => <RankBadge key={k.id} rank={r} label={k.name} kitId={k.id} delta={kitDelta(k.id)} />)}
+                </div>
+              )}
             </div>
           </div>
           <h2 className="mb-3 mt-6 font-display text-sm font-bold uppercase tracking-wide text-muted-foreground">Kit tiers</h2>
@@ -93,6 +109,8 @@ export function PlayerProfile({ player }: { player: LadderPlayer }) {
                 bonus={player.bonuses[k.id] ?? 0}
                 lp={player.tierLP[k.id] ?? null}
                 synced={player.synced?.[k.id]}
+                rank={kitRank(k.id)}
+                delta={kitDelta(k.id)}
               />
             ))}
           </div>
@@ -104,7 +122,9 @@ export function PlayerProfile({ player }: { player: LadderPlayer }) {
 
 export function PlayerProfilePage({ playerId }: { playerId: string }) {
   const { data: players } = useSuspenseQuery(ladderQuery);
+  const { data: baseline } = useQuery(rankBaselineQuery);
+  const ranks = useMemo(() => rankMaps(players), [players]);
   const player = players.find((p) => p.id === playerId);
   if (!player) return <p className="py-16 text-center text-muted-foreground">Player not found.</p>;
-  return <PlayerProfile player={player} />;
+  return <PlayerProfile player={player} ranks={ranks} baseline={baseline} />;
 }
