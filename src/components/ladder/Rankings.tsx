@@ -71,10 +71,44 @@ function rankBg(i: number) {
   return i === 0 ? "bg-rank-1" : i === 1 ? "bg-rank-2" : i === 2 ? "bg-rank-3" : "bg-rank-n";
 }
 
-function Row({ p, i, kit, delta }: { p: LadderPlayer; i: number; kit?: string | undefined; delta?: RankDelta }) {
+// LP shown for a player: in a kit tab the kit's LP (the bot's value, else tier value + bonus), otherwise the total.
+function lpInfo(p: LadderPlayer, kit?: string | undefined) {
   const points = kit ? kitPoints(p.tiers[kit], p.bonuses[kit] ?? 0, p.tierLP[kit]) : p.points;
   const syncedLP = kit ? p.synced?.[kit]?.lp : null;
-  const displayLP = syncedLP != null ? syncedLP : points;
+  return { points, displayLP: syncedLP != null ? syncedLP : points };
+}
+
+// Bigger card for the top three players (1 in the middle on wide screens).
+function PodiumCard({ p, i, kit, delta }: { p: LadderPlayer; i: number; kit?: string | undefined; delta?: RankDelta }) {
+  const { displayLP } = lpInfo(p, kit);
+  const first = i === 0;
+  const byTier = compareKitsByTier(p.tiers, p.bonuses, p.tierLP);
+  const chips = kit ? [kit] : Object.keys(p.tiers).sort(byTier);
+  const frame = first ? "border-gold/60 bg-gold/5 py-6 md:order-2 md:pb-9 shadow-glow"
+    : i === 1 ? "border-silver/40 bg-silver/5 py-5 md:order-1" : "border-bronze/40 bg-bronze/5 py-5 md:order-3";
+  const badge = first ? "bg-gold" : i === 1 ? "bg-silver" : "bg-bronze";
+  return (
+    <Link to="/players/$playerId" params={{ playerId: p.id }}
+      className={`flex flex-col items-center rounded-2xl border px-4 text-center transition-colors hover:bg-accent ${frame}`}>
+      <span className={`rounded-lg px-4 py-0.5 font-display text-xl font-black text-background ${badge}`}>{i + 1}</span>
+      <Avatar p={p} className={`mt-3 ${first ? "h-36" : "h-28"}`} />
+      <span className="mt-2 max-w-full truncate font-display text-xl font-bold">{p.username}</span>
+      <span className="mt-0.5 flex items-center gap-2 text-sm font-semibold">
+        <span className="text-primary">◆ {displayLP == null ? "-" : `${displayLP} LP`}</span>
+        <span className={`rounded-md px-1.5 font-display text-xs font-bold ${regionClass(p.region)}`}>{p.region}</span>
+        <RankChangeChip delta={delta ?? null} />
+      </span>
+      {chips.length > 0 && (
+        <div className="mt-3 flex w-full flex-wrap justify-center gap-2 rounded-lg bg-background/60 p-3">
+          {chips.map((k) => <TierChip key={k} kitId={k} tier={p.tiers[k]} />)}
+        </div>
+      )}
+    </Link>
+  );
+}
+
+function Row({ p, i, kit, delta }: { p: LadderPlayer; i: number; kit?: string | undefined; delta?: RankDelta }) {
+  const { points, displayLP } = lpInfo(p, kit);
   const bonus = kit ? (isLowerTier(p.tiers[kit]) ? 0 : p.bonuses[kit] ?? 0) : Object.entries(p.bonuses).reduce((sum, [id, value]) => sum + (isLowerTier(p.tiers[id]) ? 0 : value), 0);
   const byTier = compareKitsByTier(p.tiers, p.bonuses, p.tierLP);
   const sorted = Object.entries(p.tiers).sort((a, b) => byTier(a[0], b[0]));
@@ -119,20 +153,31 @@ export function Rankings({ kit, q }: { kit?: string | undefined; q?: string | un
 
   const ranked = list.map((p, i) => ({ p, i }));
   const shown = q ? ranked.filter(({ p }) => p.username.toLowerCase().includes(q.toLowerCase())) : ranked;
+  // The top three get big podium cards, except while searching.
+  const showPodium = !q && !isLoading && !error && shown.length >= 3;
+  const podium = showPodium ? shown.slice(0, 3) : [];
+  const rest = showPodium ? shown.slice(3) : shown;
 
   return (
     <div className="min-h-screen px-4 pb-16">
       <Header />
       <main className="mx-auto mt-8 max-w-6xl rounded-xl border bg-panel p-5">
         <KitTabs kit={kit} />
-        <div className="mt-4 hidden grid-cols-[8rem_16rem_6rem_1fr] px-4 pb-2 text-sm font-semibold text-muted-foreground lg:grid">
-          <span className="pl-4">#</span><span className="pl-4">Player</span><span>Region</span><span className="text-center">Tiers</span>
-        </div>
-        <div className="space-y-2">
+        {podium.length === 3 && (
+          <div className="mt-6 grid items-end gap-3 md:grid-cols-3">
+            {podium.map(({ p, i }) => <PodiumCard key={p.id} p={p} i={i} kit={kit} delta={rankDelta(baselineMap, p.id, i + 1)} />)}
+          </div>
+        )}
+        {rest.length > 0 && (
+          <div className="mt-4 hidden grid-cols-[8rem_16rem_6rem_1fr] px-4 pb-2 text-sm font-semibold text-muted-foreground lg:grid">
+            <span className="pl-4">#</span><span className="pl-4">Player</span><span>Region</span><span className="text-center">Tiers</span>
+          </div>
+        )}
+        <div className={`space-y-2 ${podium.length === 3 ? "mt-3" : ""}`}>
           {isLoading && <p className="py-10 text-center text-muted-foreground">Loading rankings…</p>}
           {error && <p className="py-10 text-center text-destructive">Couldn't load rankings.</p>}
           {!isLoading && shown.length === 0 && <p className="py-10 text-center text-muted-foreground">No players found.</p>}
-          {shown.map(({ p, i }) => <Row key={p.id} p={p} i={i} kit={kit} delta={rankDelta(baselineMap, p.id, i + 1)} />)}
+          {rest.map(({ p, i }) => <Row key={p.id} p={p} i={i} kit={kit} delta={rankDelta(baselineMap, p.id, i + 1)} />)}
         </div>
       </main>
     </div>
