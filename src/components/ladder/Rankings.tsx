@@ -2,11 +2,13 @@ import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Header } from "./Header";
 import { KitIcon } from "./KitIcon";
-import { ladderQuery, rankBaselineQuery, type LadderPlayer } from "@/lib/ladder";
+import { ladderQueryOf, rankBaselineQuery, type LadderPlayer } from "@/lib/ladder";
+import { LadderProvider, themeClass, useLadderConfig } from "@/lib/ladder-context";
+import { PVP_LADDER, type LadderConfig } from "@/lib/ladders";
 import { rankDelta, sortKit, sortOverall, type RankDelta } from "@/lib/ranking";
 import { RankChangeChip } from "./RankBadge";
 import {
-  KITS, OVERALL_ICON, avatarFallback, avatarUrl,
+  OVERALL_ICON, avatarFallback, avatarUrl,
   regionClass, tierBadgeClass, tierRingClass, kitPoints, isLowerTier,
   compareKitsByTier,
 } from "@/lib/kits";
@@ -28,32 +30,31 @@ export function Avatar({ p, className }: { p: { username: string; mc_uuid: strin
 }
 
 function KitTabs({ kit }: { kit?: string | undefined }) {
+  const ladder = useLadderConfig();
+  const sub = ladder.id === "sub";
+  const overall = <>
+    <KitIcon kit={{ id: "overall", name: "Overall", image: OVERALL_ICON, tone: "text-gold" }} className="h-6 w-6 text-gold" /> OVERALL
+  </>;
+  const overallClass = `flex h-12 items-center gap-2 rounded-lg border px-4 font-display text-sm font-bold ${!kit ? "bg-accent shadow-glow" : "bg-row hover:bg-accent"}`;
   return (
     <div className="flex flex-wrap justify-center gap-2">
-      <Link
-        to="/"
-        className={`flex h-12 items-center gap-2 rounded-lg border px-4 font-display text-sm font-bold ${!kit ? "bg-accent shadow-glow" : "bg-row hover:bg-accent"}`}
-      >
-        <KitIcon kit={{ id: "overall", name: "Overall", image: OVERALL_ICON, tone: "text-gold" }} className="h-6 w-6 text-gold" /> OVERALL
-      </Link>
-      {KITS.map((k) => (
-        <Link
-          key={k.id}
-          to="/rankings/$kit"
-          params={{ kit: k.id }}
-          title={k.name}
-          className={`flex h-12 items-center gap-2 rounded-lg border px-3 text-sm font-semibold ${kit === k.id ? "bg-accent shadow-glow" : "bg-row hover:bg-accent"}`}
-        >
+      {sub ? <Link to="/sub" className={overallClass}>{overall}</Link> : <Link to="/" className={overallClass}>{overall}</Link>}
+      {ladder.kits.map((k) => {
+        const className = `flex h-12 items-center gap-2 rounded-lg border px-3 text-sm font-semibold ${kit === k.id ? "bg-accent shadow-glow" : "bg-row hover:bg-accent"}`;
+        const content = <>
           <KitIcon kit={k} className={`h-6 w-6 ${k.tone}`} />
           {kit === k.id && <span className="font-display">{k.name}</span>}
-        </Link>
-      ))}
+        </>;
+        return sub
+          ? <Link key={k.id} to="/sub/rankings/$kit" params={{ kit: k.id }} title={k.name} className={className}>{content}</Link>
+          : <Link key={k.id} to="/rankings/$kit" params={{ kit: k.id }} title={k.name} className={className}>{content}</Link>;
+      })}
     </div>
   );
 }
 
 function TierChip({ kitId, tier }: { kitId: string; tier?: string | undefined }) {
-  const k = KITS.find((x) => x.id === kitId);
+  const k = useLadderConfig().kits.find((x) => x.id === kitId);
   if (!k) return null;
   return (
     <div className="flex flex-col items-center gap-0.5" title={`${k.name}: ${tier ?? "Unranked"}`}>
@@ -69,6 +70,13 @@ function TierChip({ kitId, tier }: { kitId: string; tier?: string | undefined })
 
 function rankBg(i: number) {
   return i === 0 ? "bg-rank-1" : i === 1 ? "bg-rank-2" : i === 2 ? "bg-rank-3" : "bg-rank-n";
+}
+
+// Links to a player's profile when this ladder has profile pages, otherwise a plain box.
+function PlayerLink({ playerId, className, children }: { playerId: string; className: string; children: React.ReactNode }) {
+  const ladder = useLadderConfig();
+  if (!ladder.features.profiles) return <div className={className}>{children}</div>;
+  return <Link to="/players/$playerId" params={{ playerId }} className={className}>{children}</Link>;
 }
 
 // LP shown for a player: in a kit tab the kit's LP (the bot's value, else tier value + bonus), otherwise the total.
@@ -88,7 +96,7 @@ function PodiumCard({ p, i, kit, delta }: { p: LadderPlayer; i: number; kit?: st
     : i === 1 ? "border-silver/40 bg-silver/5 py-5 md:order-1" : "border-bronze/40 bg-bronze/5 py-5 md:order-3";
   const badge = first ? "bg-gold" : i === 1 ? "bg-silver" : "bg-bronze";
   return (
-    <Link to="/players/$playerId" params={{ playerId: p.id }}
+    <PlayerLink playerId={p.id}
       className={`flex flex-col items-center rounded-2xl border px-4 text-center transition-colors hover:bg-accent ${frame}`}>
       <span className={`rounded-lg px-4 py-0.5 font-display text-xl font-black text-background ${badge}`}>{i + 1}</span>
       <Avatar p={p} className={`mt-3 ${first ? "h-36" : "h-28"}`} />
@@ -103,7 +111,7 @@ function PodiumCard({ p, i, kit, delta }: { p: LadderPlayer; i: number; kit?: st
           {chips.map((k) => <TierChip key={k} kitId={k} tier={p.tiers[k]} />)}
         </div>
       )}
-    </Link>
+    </PlayerLink>
   );
 }
 
@@ -113,11 +121,11 @@ function Row({ p, i, kit, delta }: { p: LadderPlayer; i: number; kit?: string | 
   const byTier = compareKitsByTier(p.tiers, p.bonuses, p.tierLP);
   const sorted = Object.entries(p.tiers).sort((a, b) => byTier(a[0], b[0]));
 
-  const unranked = KITS.filter((k) => !p.tiers[k.id]).map((k) => [k.id, undefined] as const);
+  const ladder = useLadderConfig();
+  const unranked = ladder.kits.filter((k) => !p.tiers[k.id]).map((k) => [k.id, undefined] as const);
   return (
-    <Link
-      to="/players/$playerId"
-      params={{ playerId: p.id }}
+    <PlayerLink
+      playerId={p.id}
       className="group flex items-stretch overflow-hidden rounded-lg border bg-row transition-colors hover:bg-accent"
     >
       <div className={`relative flex w-32 shrink-0 items-center rank-slant ${rankBg(i)}`}>
@@ -141,13 +149,13 @@ function Row({ p, i, kit, delta }: { p: LadderPlayer; i: number; kit?: string | 
           [...sorted, ...unranked].map(([k, t]) => <TierChip key={k} kitId={k} tier={t} />)
         )}
       </div>
-    </Link>
+    </PlayerLink>
   );
 }
 
-export function Rankings({ kit, q }: { kit?: string | undefined; q?: string | undefined }) {
-  const { data, isLoading, error } = useQuery({ ...ladderQuery, refetchInterval: 15000 });
-  const { data: baseline } = useQuery(rankBaselineQuery);
+export function Rankings({ kit, q, ladder = PVP_LADDER }: { kit?: string | undefined; q?: string | undefined; ladder?: LadderConfig }) {
+  const { data, isLoading, error } = useQuery({ ...ladderQueryOf(ladder), refetchInterval: 15000 });
+  const { data: baseline } = useQuery({ ...rankBaselineQuery, enabled: ladder.features.rankArrows });
   const list = kit ? sortKit(data ?? [], kit) : sortOverall(data ?? []);
   const baselineMap = kit ? baseline?.kits[kit] : baseline?.overall;
 
@@ -159,7 +167,8 @@ export function Rankings({ kit, q }: { kit?: string | undefined; q?: string | un
   const rest = showPodium ? shown.slice(3) : shown;
 
   return (
-    <div className="min-h-screen px-4 pb-16">
+    <LadderProvider ladder={ladder}>
+    <div className={`min-h-screen px-4 pb-16 ${themeClass(ladder)}`}>
       <Header />
       <main className="mx-auto mt-8 max-w-6xl rounded-xl border bg-panel p-5">
         <KitTabs kit={kit} />
@@ -181,5 +190,6 @@ export function Rankings({ kit, q }: { kit?: string | undefined; q?: string | un
         </div>
       </main>
     </div>
+    </LadderProvider>
   );
 }
