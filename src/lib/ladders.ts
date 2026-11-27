@@ -12,6 +12,7 @@ export type LadderFeatures = {
   tournaments: boolean;
   staff: boolean;
   rankArrows: boolean;
+  recentResults: boolean;
 };
 
 export type LadderConfig = {
@@ -42,7 +43,7 @@ export const PVP_LADDER: LadderConfig = {
   name: "PvP Ladder",
   kits: KITS,
   basePath: "",
-  features: { profiles: true, compare: true, stats: true, tournaments: true, staff: true, rankArrows: true },
+  features: { profiles: true, compare: true, stats: true, tournaments: true, staff: true, rankArrows: true, recentResults: true },
 };
 
 export const SUB_LADDER: LadderConfig = {
@@ -50,7 +51,7 @@ export const SUB_LADDER: LadderConfig = {
   name: "Subtiers Ladder",
   kits: SUB_KITS,
   basePath: "/sub",
-  features: { profiles: false, compare: false, stats: false, tournaments: false, staff: false, rankArrows: false },
+  features: { profiles: false, compare: false, stats: false, tournaments: false, staff: false, rankArrows: false, recentResults: false },
 };
 
 // The Subtiers ladder is locked (staff only) unless the setting says "false" explicitly.
