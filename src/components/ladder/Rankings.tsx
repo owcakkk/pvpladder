@@ -4,6 +4,7 @@ import { Header } from "./Header";
 import { KitIcon } from "./KitIcon";
 import { ladderQueryOf, rankBaselineQuery, subAccessQuery, type LadderPlayer } from "@/lib/ladder";
 import { Lock } from "lucide-react";
+import { RecentResults } from "./RecentResults";
 import { LadderProvider, themeClass, useLadderConfig } from "@/lib/ladder-context";
 import { PVP_LADDER, type LadderConfig } from "@/lib/ladders";
 import { rankDelta, sortKit, sortOverall, type RankDelta } from "@/lib/ranking";
@@ -201,7 +202,8 @@ export function Rankings({ kit, q, ladder = PVP_LADDER }: { kit?: string | undef
     <LadderProvider ladder={ladder}>
     <div className={`min-h-screen px-4 pb-16 ${themeClass(ladder)}`}>
       <Header />
-      <main className="mx-auto mt-8 max-w-6xl rounded-xl border bg-panel p-5">
+      {ladder.features.recentResults && <RecentResults players={data ?? []} kit={kit} />}
+      <main className="mx-auto mt-8 max-w-6xl rounded-xl border bg-panel p-5 [.recent-strip+&]:mt-3">
         {sub && access?.locked && (
           <p className="mb-4 flex items-center justify-center gap-2 rounded-lg border bg-row px-3 py-2 text-xs font-semibold text-muted-foreground">
             <Lock className="h-3.5 w-3.5 text-primary" /> Locked: only staff can see this ladder.
