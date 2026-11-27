@@ -2,7 +2,8 @@ import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Header } from "./Header";
 import { KitIcon } from "./KitIcon";
-import { ladderQueryOf, rankBaselineQuery, type LadderPlayer } from "@/lib/ladder";
+import { ladderQueryOf, rankBaselineQuery, subAccessQuery, type LadderPlayer } from "@/lib/ladder";
+import { Lock } from "lucide-react";
 import { LadderProvider, themeClass, useLadderConfig } from "@/lib/ladder-context";
 import { PVP_LADDER, type LadderConfig } from "@/lib/ladders";
 import { rankDelta, sortKit, sortOverall, type RankDelta } from "@/lib/ranking";
@@ -153,11 +154,41 @@ function Row({ p, i, kit, delta }: { p: LadderPlayer; i: number; kit?: string | 
   );
 }
 
+function SubLocked() {
+  return (
+    <div className="flex flex-col items-center gap-3 py-16 text-center">
+      <span className="grid h-14 w-14 place-items-center rounded-full bg-row"><Lock className="h-6 w-6 text-primary" /></span>
+      <h2 className="font-display text-xl font-black">The Subtiers ladder is locked</h2>
+      <p className="max-w-sm text-sm text-muted-foreground">Only staff members can see it for now. It will open to everyone once it is ready.</p>
+      <div className="mt-2 flex gap-2">
+        <Link to="/admin" className="rounded-lg bg-primary px-4 py-2 font-display text-sm font-bold text-primary-foreground">Staff login</Link>
+        <Link to="/" className="rounded-lg border bg-row px-4 py-2 font-display text-sm font-bold hover:bg-accent">Back to Tiers</Link>
+      </div>
+    </div>
+  );
+}
+
 export function Rankings({ kit, q, ladder = PVP_LADDER }: { kit?: string | undefined; q?: string | undefined; ladder?: LadderConfig }) {
-  const { data, isLoading, error } = useQuery({ ...ladderQueryOf(ladder), refetchInterval: 15000 });
+  const sub = ladder.id === "sub";
+  const { data: access, isLoading: accessLoading } = useQuery({ ...subAccessQuery, enabled: sub });
+  const open = !sub || !!access?.allowed;
+  const { data, isLoading, error } = useQuery({ ...ladderQueryOf(ladder), refetchInterval: 15000, enabled: open });
   const { data: baseline } = useQuery({ ...rankBaselineQuery, enabled: ladder.features.rankArrows });
   const list = kit ? sortKit(data ?? [], kit) : sortOverall(data ?? []);
   const baselineMap = kit ? baseline?.kits[kit] : baseline?.overall;
+
+  if (!open) {
+    return (
+      <LadderProvider ladder={ladder}>
+        <div className={`min-h-screen px-4 pb-16 ${themeClass(ladder)}`}>
+          <Header />
+          <main className="mx-auto mt-8 max-w-6xl rounded-xl border bg-panel p-5">
+            {accessLoading ? <p className="py-10 text-center text-muted-foreground">Loading…</p> : <SubLocked />}
+          </main>
+        </div>
+      </LadderProvider>
+    );
+  }
 
   const ranked = list.map((p, i) => ({ p, i }));
   const shown = q ? ranked.filter(({ p }) => p.username.toLowerCase().includes(q.toLowerCase())) : ranked;
@@ -171,6 +202,11 @@ export function Rankings({ kit, q, ladder = PVP_LADDER }: { kit?: string | undef
     <div className={`min-h-screen px-4 pb-16 ${themeClass(ladder)}`}>
       <Header />
       <main className="mx-auto mt-8 max-w-6xl rounded-xl border bg-panel p-5">
+        {sub && access?.locked && (
+          <p className="mb-4 flex items-center justify-center gap-2 rounded-lg border bg-row px-3 py-2 text-xs font-semibold text-muted-foreground">
+            <Lock className="h-3.5 w-3.5 text-primary" /> Locked: only staff can see this ladder.
+          </p>
+        )}
         <KitTabs kit={kit} />
         {podium.length === 3 && (
           <div className="mt-6 grid items-end gap-3 md:grid-cols-3">

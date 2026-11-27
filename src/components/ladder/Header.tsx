@@ -1,9 +1,10 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { ChevronDown, Trophy } from "lucide-react";
+import { ChevronDown, Lock, Trophy } from "lucide-react";
 import ladderImg from "@/assets/overall-ladder-big.png.asset.json";
 import { tournamentsQuery } from "@/lib/tournaments";
+import { subAccessQuery } from "@/lib/ladder";
 import { useLadderConfig } from "@/lib/ladder-context";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
@@ -11,13 +12,18 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuIte
 // Pill switch between the two ladders: Tiers (PvP Ladder) and Subtiers.
 function LadderSwitch() {
   const ladder = useLadderConfig();
+  const { data: access } = useQuery(subAccessQuery);
+  // While Subtiers is locked, only staff see the switch (with a lock). Visitors never do.
+  if (!access?.allowed) return null;
   const base = "rounded-full px-4 py-1.5 font-display text-sm font-bold transition-colors";
   const on = `${base} bg-primary text-primary-foreground`;
   const off = `${base} text-muted-foreground hover:text-foreground`;
   return (
     <div className="flex items-center rounded-full border bg-background/60 p-1" role="tablist" aria-label="Ladder">
       <Link to="/" role="tab" aria-selected={ladder.id === "pvp"} className={ladder.id === "pvp" ? on : off}>Tiers</Link>
-      <Link to="/sub" role="tab" aria-selected={ladder.id === "sub"} className={ladder.id === "sub" ? on : off}>Subtiers</Link>
+      <Link to="/sub" role="tab" aria-selected={ladder.id === "sub"} className={`inline-flex items-center gap-1.5 ${ladder.id === "sub" ? on : off}`} title={access.locked ? "Locked: only staff can see Subtiers" : undefined}>
+        Subtiers{access.locked && <Lock className="h-3 w-3" />}
+      </Link>
     </div>
   );
 }
