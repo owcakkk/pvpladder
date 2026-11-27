@@ -2,6 +2,7 @@ import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { buildLadderPlayers, type LadderPlayer } from "./ladder-build";
 import { parseRankMaps, type RankMaps } from "./ranking";
+import type { LadderConfig } from "./ladders";
 export { computePoints } from "./kits";
 export type { LadderPlayer } from "./ladder-build";
 
@@ -17,6 +18,23 @@ export const ladderQuery = queryOptions({
     return buildLadderPlayers(players ?? [], tiers ?? []);
   },
 });
+
+// Subtiers ladder: same shape of data, read from its own tables (sub_players / sub_player_tiers).
+export const subLadderQuery = queryOptions({
+  queryKey: ["ladder", "sub"],
+  queryFn: async (): Promise<LadderPlayer[]> => {
+    const table = (supabase as unknown as { from: (name: string) => any }).from.bind(supabase) as (name: string) => any;
+    const [{ data: players, error }, { data: tiers, error: tiersError }] = await Promise.all([
+      table("sub_players").select("id, username, mc_uuid, region"),
+      table("sub_player_tiers").select("player_id, kit, tier, bonus_points, tier_lp, total_lp, categories, tested_at, kit_name"),
+    ]);
+    if (error) throw error;
+    if (tiersError) throw tiersError;
+    return buildLadderPlayers(players ?? [], tiers ?? []);
+  },
+});
+
+export const ladderQueryOf = (ladder: LadderConfig) => (ladder.id === "sub" ? subLadderQuery : ladderQuery);
 
 // Ranks from the newest daily snapshot that is at least ~20 hours old, used for the
 // rank-change arrows. Returns null (no arrows) if the table or a snapshot doesn't exist yet.
