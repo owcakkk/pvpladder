@@ -52,3 +52,7 @@ export const SUB_LADDER: LadderConfig = {
   basePath: "/sub",
   features: { profiles: false, compare: false, stats: false, tournaments: false, staff: false, rankArrows: false },
 };
+
+// The Subtiers ladder is locked (staff only) unless the setting says "false" explicitly.
+// A missing or unreadable setting therefore counts as locked.
+export const isSubLadderLocked = (setting: unknown): boolean => setting !== "false";

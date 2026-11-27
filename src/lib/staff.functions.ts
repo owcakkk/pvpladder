@@ -2,6 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { useSession } from "@tanstack/react-start/server";
 import { createHash, pbkdf2Sync, randomBytes, timingSafeEqual } from "node:crypto";
 import { DEFENCE_POINTS, KITS, REGIONS, TIERS, isLowerTier, tierForLP, validateTierLP } from "./kits";
+import type { PlayerRow, TierRow } from "./ladder-build";
+import { isSubLadderLocked } from "./ladders";
 
 type StaffSession = { staff?: boolean; v?: number };
 
@@ -41,6 +43,38 @@ async function requireStaff() {
 
 export const staffStatus = createServerFn({ method: "GET" }).handler(async () => {
   return { staff: !!(await isStaff()) };
+});
+
+// ---- Subtiers ladder lock -------------------------------------------------------------
+// Subtiers data is only handed out by the functions below. While the ladder is locked
+// they answer staff only, so nothing leaks through the page or the public database API.
+async function readSubLadderLocked(db: Awaited<ReturnType<typeof storedPassword>>["db"]): Promise<boolean> {
+  try {
+    const loose = db as unknown as { from: (table: string) => any };
+    const { data, error } = await loose.from("site_settings").select("value").eq("key", "sub_ladder_locked").maybeSingle();
+    if (error) return true;
+    return isSubLadderLocked(data?.value);
+  } catch { return true; }
+}
+
+export const subAccess = createServerFn({ method: "GET" }).handler(async () => {
+  const staffDb = await isStaff();
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const locked = await readSubLadderLocked(supabaseAdmin);
+  return { staff: !!staffDb, locked, allowed: !!staffDb || !locked };
+});
+
+export const getSubLadderRows = createServerFn({ method: "GET" }).handler(async () => {
+  const staffDb = await isStaff();
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  if (!staffDb && (await readSubLadderLocked(supabaseAdmin))) throw new Error("The Subtiers ladder is locked");
+  const loose = supabaseAdmin as unknown as { from: (table: string) => any };
+  const [players, tiers] = await Promise.all([
+    loose.from("sub_players").select("id, username, mc_uuid, region"),
+    loose.from("sub_player_tiers").select("player_id, kit, tier, bonus_points, tier_lp, total_lp, categories, tested_at, kit_name"),
+  ]);
+  if (players.error || tiers.error) throw new Error("Couldn't load the Subtiers ladder");
+  return { players: (players.data ?? []) as PlayerRow[], tiers: (tiers.data ?? []) as TierRow[] };
 });
 
 export const recentUsernameChanges = createServerFn({ method: "GET" }).handler(async () => {
