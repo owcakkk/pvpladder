@@ -10,14 +10,16 @@ import {
 import { Header } from "@/components/ladder/Header";
 import { TierEditor } from "@/components/ladder/TierEditor";
 import { Avatar } from "@/components/ladder/Rankings";
-import { ladderQuery } from "@/lib/ladder";
+import { ladderQueryOf, subAccessQuery } from "@/lib/ladder";
+import { PVP_LADDER, SUB_LADDER, type LadderConfig } from "@/lib/ladders";
+import { themeClass } from "@/lib/ladder-context";
 import {
-  addPlayer, lockStaff, removePlayer, resetStaffPassword, staffStatus, unlockStaff, updateRegion,
+  addPlayer, lockStaff, removePlayer, resetStaffPassword, setSubLadderLocked, staffStatus, unlockStaff, updateRegion,
 } from "@/lib/staff.functions";
 import { TournamentManager } from "@/components/ladder/TournamentManager";
 import { UsernameChanges } from "@/components/ladder/UsernameChanges";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { KITS, REGIONS } from "@/lib/kits";
+import { REGIONS } from "@/lib/kits";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -115,9 +117,45 @@ function ResetPasswordDialog({ onDone }: { onDone: () => void }) {
   );
 }
 
-function AdminPanel() {
+// Lets staff open or close the Subtiers ladder to everyone.
+function SubVisibility() {
   const qc = useQueryClient();
-  const { data: players = [] } = useQuery(ladderQuery);
+  const { data: access } = useQuery(subAccessQuery);
+  const setLocked = useServerFn(setSubLadderLocked);
+  const [busy, setBusy] = useState(false);
+  const locked = access?.locked ?? true;
+  const change = async () => {
+    if (locked && !confirm("Open the Subtiers ladder to everyone?")) return;
+    setBusy(true);
+    try {
+      await setLocked({ data: { locked: !locked } });
+      await qc.invalidateQueries({ queryKey: ["staff"] });
+      await qc.invalidateQueries({ queryKey: ["ladder"] });
+      toast.success(locked ? "Subtiers is now open to everyone" : "Subtiers is now staff only");
+    } catch (err) { toast.error(errMsg(err)); }
+    finally { setBusy(false); }
+  };
+  return (
+    <section className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-panel p-5">
+      <div>
+        <h2 className="flex items-center gap-2 font-display text-xl font-bold">
+          <Lock className="h-4 w-4 text-primary" /> Subtiers visibility
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          {locked ? "Locked: only staff can see the Subtiers ladder." : "Open: everyone can see the Subtiers ladder."}
+        </p>
+      </div>
+      <button className={btnCls} disabled={busy || !access} onClick={change}>
+        {locked ? "Unlock for everyone" : "Lock (staff only)"}
+      </button>
+    </section>
+  );
+}
+
+function AdminPanel({ ladder }: { ladder: LadderConfig }) {
+  const qc = useQueryClient();
+  const sub = ladder.id === "sub";
+  const { data: players = [] } = useQuery(ladderQueryOf(ladder));
   const add = useServerFn(addPlayer);
   const saveRegion = useServerFn(updateRegion);
   const del = useServerFn(removePlayer);
@@ -135,7 +173,7 @@ function AdminPanel() {
   const onAdd = async (e: React.FormEvent) => {
     e.preventDefault(); setBusy(true);
     await run(async () => {
-      const r = await add({ data: { username: name, region } });
+      const r = await add({ data: { username: name, region, ladder: ladder.id } });
       toast.success(`Added ${r.username}`); setName("");
     });
     setBusy(false);
@@ -144,21 +182,8 @@ function AdminPanel() {
   const list = [...players].sort((a, b) => a.username.localeCompare(b.username))
     .filter((p) => p.username.toLowerCase().includes(filter.toLowerCase()));
 
-  return (
-    <main className="mx-auto mt-6 max-w-6xl">
-      <Tabs value={tab} onValueChange={setTab}>
-        <TabsList aria-label="Staff panel sections" className="mb-4 grid h-auto min-h-11 w-full grid-cols-3 sm:max-w-xl">
-          <TabsTrigger value="tiers" className="h-full gap-2 data-[state=active]:text-primary">
-            <Swords className="h-4 w-4" /> Tier Assign
-          </TabsTrigger>
-          <TabsTrigger value="tournaments" className="h-full gap-2 data-[state=active]:text-primary">
-            <Trophy className="h-4 w-4" /> Tournaments
-          </TabsTrigger>
-          <TabsTrigger value="usernames" className="h-full gap-2 whitespace-normal text-center data-[state=active]:text-primary">
-            <History className="hidden h-4 w-4 shrink-0 sm:block" /> Username Changes
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value="tiers" forceMount className="space-y-6 data-[state=inactive]:hidden">
+  const tiersContent = (
+    <>
       <section className="rounded-xl border bg-panel p-5">
         <h2 className="mb-3 font-display text-xl font-bold">Add player</h2>
         <form onSubmit={onAdd} className="flex flex-wrap gap-3">
@@ -184,17 +209,17 @@ function AdminPanel() {
                 <span className="font-display text-lg font-bold">{p.username}</span>
                 <span className="text-sm text-muted-foreground">{p.points} LP</span>
                 <select className="ml-auto rounded-md border bg-background px-2 py-1 text-sm" value={p.region}
-                  onChange={(e) => run(() => saveRegion({ data: { playerId: p.id, region: e.target.value } }))}>
+                  onChange={(e) => run(() => saveRegion({ data: { playerId: p.id, region: e.target.value, ladder: ladder.id } }))}>
                   {REGIONS.map((r) => <option key={r}>{r}</option>)}
                 </select>
                 <button aria-label={`Remove ${p.username}`} className="text-muted-foreground hover:text-destructive"
-                  onClick={() => { if (confirm(`Remove ${p.username} from the ladder?`)) run(() => del({ data: { playerId: p.id } })); }}>
+                  onClick={() => { if (confirm(`Remove ${p.username} from the ladder?`)) run(() => del({ data: { playerId: p.id, ladder: ladder.id } })); }}>
                   <Trash2 className="h-4 w-4" />
                 </button>
               </div>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                {KITS.map((k) => (
-                  <TierEditor key={`${k.id}-${p.tiers[k.id]}-${p.tierLP[k.id]}-${p.bonuses[k.id]}-${JSON.stringify(p.synced?.[k.id]?.categories ?? null)}`} playerId={p.id} kit={k}
+                {ladder.kits.map((k) => (
+                  <TierEditor ladder={ladder.id} key={`${k.id}-${p.tiers[k.id]}-${p.tierLP[k.id]}-${p.bonuses[k.id]}-${JSON.stringify(p.synced?.[k.id]?.categories ?? null)}`} playerId={p.id} kit={k}
                     tier={p.tiers[k.id]} lp={p.tierLP[k.id] ?? null} bonus={p.bonuses[k.id] ?? 0}
                     categories={p.synced?.[k.id]?.categories ?? null} refresh={refresh} />
                 ))}
@@ -204,6 +229,31 @@ function AdminPanel() {
         </div>
       </section>
 
+    </>
+  );
+
+  return (
+    <main className="mx-auto mt-6 max-w-6xl">
+      {sub ? (
+        <div className="space-y-6">
+          <SubVisibility />
+          {tiersContent}
+        </div>
+      ) : (
+      <Tabs value={tab} onValueChange={setTab}>
+        <TabsList aria-label="Staff panel sections" className="mb-4 grid h-auto min-h-11 w-full grid-cols-3 sm:max-w-xl">
+          <TabsTrigger value="tiers" className="h-full gap-2 data-[state=active]:text-primary">
+            <Swords className="h-4 w-4" /> Tier Assign
+          </TabsTrigger>
+          <TabsTrigger value="tournaments" className="h-full gap-2 data-[state=active]:text-primary">
+            <Trophy className="h-4 w-4" /> Tournaments
+          </TabsTrigger>
+          <TabsTrigger value="usernames" className="h-full gap-2 whitespace-normal text-center data-[state=active]:text-primary">
+            <History className="hidden h-4 w-4 shrink-0 sm:block" /> Username Changes
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="tiers" forceMount className="space-y-6 data-[state=inactive]:hidden">
+          {tiersContent}
         </TabsContent>
         <TabsContent value="tournaments" forceMount className="data-[state=inactive]:hidden">
           <TournamentManager />
@@ -212,6 +262,7 @@ function AdminPanel() {
           <UsernameChanges active={tab === "usernames"} />
         </TabsContent>
       </Tabs>
+      )}
     </main>
   );
 }
@@ -222,8 +273,11 @@ function AdminPage() {
   const lock = useServerFn(lockStaff);
   const { data, isLoading } = useQuery({ queryKey: ["staff"], queryFn: () => status() });
   const recheck = () => qc.invalidateQueries({ queryKey: ["staff"] });
+  const [ladderId, setLadderId] = useState<"pvp" | "sub">("pvp");
+  const ladder = ladderId === "sub" ? SUB_LADDER : PVP_LADDER;
+  const pill = "rounded-full px-4 py-1.5 font-display text-sm font-bold transition-colors";
   return (
-    <div className="min-h-screen px-4 pb-16">
+    <div className={`min-h-screen px-4 pb-16 ${themeClass(ladder)}`}>
       <Header />
       {isLoading ? (
         <p className="mt-10 text-center text-muted-foreground">Loading…</p>
@@ -231,14 +285,22 @@ function AdminPage() {
         <PasswordForm onUnlocked={recheck} />
       ) : (
         <>
-          <div className="mx-auto mt-4 flex max-w-6xl items-center justify-end gap-4">
+          <div className="mx-auto mt-4 flex max-w-6xl flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center rounded-full border bg-background/60 p-1" role="tablist" aria-label="Ladder to manage">
+              <button role="tab" aria-selected={ladderId === "pvp"} onClick={() => setLadderId("pvp")}
+                className={`${pill} ${ladderId === "pvp" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}>Tiers</button>
+              <button role="tab" aria-selected={ladderId === "sub"} onClick={() => setLadderId("sub")}
+                className={`${pill} ${ladderId === "sub" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}>Subtiers</button>
+            </div>
+            <div className="flex items-center gap-4">
             <ResetPasswordDialog onDone={recheck} />
             <button className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
               onClick={async () => { await lock(); recheck(); }}>
               <Lock className="h-4 w-4" /> Lock staff panel
             </button>
+            </div>
           </div>
-          <AdminPanel />
+          <AdminPanel key={ladder.id} ladder={ladder} />
         </>
       )}
     </div>
