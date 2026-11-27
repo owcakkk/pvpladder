@@ -3,7 +3,7 @@ import { useSession } from "@tanstack/react-start/server";
 import { createHash, pbkdf2Sync, randomBytes, timingSafeEqual } from "node:crypto";
 import { DEFENCE_POINTS, KITS, REGIONS, TIERS, isLowerTier, tierForLP, validateTierLP } from "./kits";
 import type { PlayerRow, TierRow } from "./ladder-build";
-import { isSubLadderLocked } from "./ladders";
+import { isSubLadderLocked, ladderIdOf, ladderKits, ladderTables, type LadderId } from "./ladders";
 
 type StaffSession = { staff?: boolean; v?: number };
 
@@ -40,6 +40,10 @@ async function requireStaff() {
   if (!db) throw new Error("Staff password required");
   return db;
 }
+
+// Untyped handle so the same code can work on the PvP tables and the Subtiers tables.
+type LooseDb = { from: (table: string) => any };
+const loose = (db: unknown) => db as LooseDb;
 
 export const staffStatus = createServerFn({ method: "GET" }).handler(async () => {
   return { staff: !!(await isStaff()) };
@@ -133,11 +137,11 @@ export const lockStaff = createServerFn({ method: "POST" }).handler(async () => 
 });
 
 export const addPlayer = createServerFn({ method: "POST" })
-  .inputValidator((d: { username: string; region: string }) => {
+  .inputValidator((d: { username: string; region: string; ladder?: LadderId }) => {
     const u = String(d.username ?? "").trim();
     if (!/^[A-Za-z0-9_]{2,16}$/.test(u)) throw new Error("Invalid Minecraft username");
     if (!REGIONS.includes(d.region)) throw new Error("Invalid region");
-    return { username: u, region: d.region };
+    return { username: u, region: d.region, ladder: ladderIdOf(d.ladder) };
   })
   .handler(async ({ data }) => {
     const db = await requireStaff();
@@ -169,25 +173,27 @@ export const addPlayer = createServerFn({ method: "POST" })
       } catch (e) { console.warn("lookup error", url, e); }
     }
     if (!uuid) throw new Error("Player not found");
-    const { error } = await db.from("players").insert({ username, mc_uuid: uuid, region: data.region });
+    const { error } = await loose(db).from(ladderTables(data.ladder).players).insert({ username, mc_uuid: uuid, region: data.region });
     if (error) throw new Error(error.code === "23505" ? "Player already on the ladder" : "Couldn't add player");
     return { username };
   });
 
 export const setTier = createServerFn({ method: "POST" })
-  .inputValidator((d: { playerId: string; kit: string; tier: string; tierLP?: number | null }) => {
-    if (!KITS.some((k) => k.id === d.kit)) throw new Error("Invalid kit");
+  .inputValidator((d: { playerId: string; kit: string; tier: string; tierLP?: number | null; ladder?: LadderId }) => {
+    const ladder = ladderIdOf(d.ladder);
+    if (!ladderKits(ladder).some((k) => k.id === d.kit)) throw new Error("Invalid kit");
     if (d.tier !== "" && !(TIERS as readonly string[]).includes(d.tier)) throw new Error("Invalid tier");
-    return { ...d, tierLP: validateTierLP(d.tier, d.tierLP) };
+    return { playerId: d.playerId, kit: d.kit, tier: d.tier, ladder, tierLP: validateTierLP(d.tier, d.tierLP) };
   })
   .handler(async ({ data }) => {
     const db = await requireStaff();
-    const { data: previous } = await db.from("player_tiers").select("tier").eq("player_id", data.playerId).eq("kit", data.kit).maybeSingle();
+    const tiers = loose(db).from(ladderTables(data.ladder).tiers);
+    const { data: previous } = await tiers.select("tier").eq("player_id", data.playerId).eq("kit", data.kit).maybeSingle();
     const { error } = data.tier === ""
-      ? await db.from("player_tiers").delete().eq("player_id", data.playerId).eq("kit", data.kit)
-      : await db.from("player_tiers").upsert({ player_id: data.playerId, kit: data.kit, tier: data.tier, tier_lp: data.tierLP, total_lp: null, categories: null, tested_at: null, updated_at: new Date().toISOString() });
+      ? await loose(db).from(ladderTables(data.ladder).tiers).delete().eq("player_id", data.playerId).eq("kit", data.kit)
+      : await loose(db).from(ladderTables(data.ladder).tiers).upsert({ player_id: data.playerId, kit: data.kit, tier: data.tier, tier_lp: data.tierLP, total_lp: null, categories: null, tested_at: null, updated_at: new Date().toISOString() });
     if (error) throw new Error("Couldn't save tier");
-    if (data.tier !== "" && previous?.tier !== data.tier) {
+    if (data.ladder === "pvp" && data.tier !== "" && previous?.tier !== data.tier) {
       const { recordTierHistory } = await import("./tier-history.server");
       await recordTierHistory(db, [{ player_id: data.playerId, kit: data.kit, tier: data.tier, achieved_at: Date.now(), source: "staff" }]);
     }
@@ -195,8 +201,9 @@ export const setTier = createServerFn({ method: "POST" })
   });
 
 export const setCategoryPoints = createServerFn({ method: "POST" })
-  .inputValidator((d: { playerId: string; kit: string; categories: Record<string, number> }) => {
-    if (!KITS.some((k) => k.id === d.kit)) throw new Error("Invalid kit");
+  .inputValidator((d: { playerId: string; kit: string; categories: Record<string, number>; ladder?: LadderId }) => {
+    const ladder = ladderIdOf(d.ladder);
+    if (!ladderKits(ladder).some((k) => k.id === d.kit)) throw new Error("Invalid kit");
     const entries = Object.entries(d.categories ?? {});
     if (entries.length === 0 || entries.length > 20) throw new Error("Invalid categories");
     const clean: Record<string, number> = {};
@@ -207,21 +214,21 @@ export const setCategoryPoints = createServerFn({ method: "POST" })
     }
     const total = Object.values(clean).reduce((sum, value) => sum + value, 0);
     if (total > 400) throw new Error("Category total can't exceed 400 LP (LT3 is the highest tier with category LP)");
-    return { playerId: d.playerId, kit: d.kit, categories: clean, total };
+    return { playerId: d.playerId, kit: d.kit, categories: clean, total, ladder };
   })
   .handler(async ({ data }) => {
     const db = await requireStaff();
-    const { data: row, error: readError } = await db.from("player_tiers").select("tier, tested_at")
+    const { data: row, error: readError } = await loose(db).from(ladderTables(data.ladder).tiers).select("tier, tested_at")
       .eq("player_id", data.playerId).eq("kit", data.kit).maybeSingle();
     if (readError) throw new Error("Couldn't read tier");
     if (!row) throw new Error("Assign a tier first");
     if (!isLowerTier(row.tier)) throw new Error("Category LP can only be edited for LT3 to LT5 kits");
     const tier = tierForLP(data.total);
-    const { error } = await db.from("player_tiers")
+    const { error } = await loose(db).from(ladderTables(data.ladder).tiers)
       .update({ categories: data.categories, total_lp: data.total, tier_lp: data.total, tier, tested_at: row.tested_at ?? Date.now(), updated_at: new Date().toISOString() })
       .eq("player_id", data.playerId).eq("kit", data.kit);
     if (error) throw new Error("Couldn't save category LP");
-    if (row.tier !== tier) {
+    if (data.ladder === "pvp" && row.tier !== tier) {
       const { recordTierHistory } = await import("./tier-history.server");
       await recordTierHistory(db, [{ player_id: data.playerId, kit: data.kit, tier, achieved_at: Date.now(), source: "staff" }]);
     }
@@ -229,26 +236,27 @@ export const setCategoryPoints = createServerFn({ method: "POST" })
   });
 
 export const updateRegion = createServerFn({ method: "POST" })
-  .inputValidator((d: { playerId: string; region: string }) => {
+  .inputValidator((d: { playerId: string; region: string; ladder?: LadderId }) => {
     if (!REGIONS.includes(d.region)) throw new Error("Invalid region");
-    return d;
+    return { playerId: d.playerId, region: d.region, ladder: ladderIdOf(d.ladder) };
   })
   .handler(async ({ data }) => {
     const db = await requireStaff();
-    const { error } = await db.from("players").update({ region: data.region }).eq("id", data.playerId);
+    const { error } = await loose(db).from(ladderTables(data.ladder).players).update({ region: data.region }).eq("id", data.playerId);
     if (error) throw new Error("Couldn't update region");
     return { ok: true };
   });
 
 export const setBonusPoints = createServerFn({ method: "POST" })
-  .inputValidator((d: { playerId: string; kit: string; points: number }) => {
-    if (!KITS.some((k) => k.id === d.kit)) throw new Error("Invalid kit");
+  .inputValidator((d: { playerId: string; kit: string; points: number; ladder?: LadderId }) => {
+    const ladder = ladderIdOf(d.ladder);
+    if (!ladderKits(ladder).some((k) => k.id === d.kit)) throw new Error("Invalid kit");
     if (!Number.isInteger(d.points) || d.points < -2147483648 || d.points > 2147483647) throw new Error("Enter whole-number LP");
-    return d;
+    return { playerId: d.playerId, kit: d.kit, points: d.points, ladder };
   })
   .handler(async ({ data }) => {
     const db = await requireStaff();
-    const { data: row, error } = await db.from("player_tiers")
+    const { data: row, error } = await loose(db).from(ladderTables(data.ladder).tiers)
       .update({ bonus_points: data.points, updated_at: new Date().toISOString() })
       .eq("player_id", data.playerId).eq("kit", data.kit).select("bonus_points").maybeSingle();
     if (error) throw new Error("Couldn't save additional LP");
@@ -272,10 +280,20 @@ export const recordDefence = createServerFn({ method: "POST" })
   });
 
 export const removePlayer = createServerFn({ method: "POST" })
-  .inputValidator((d: { playerId: string }) => d)
+  .inputValidator((d: { playerId: string; ladder?: LadderId }) => ({ playerId: d.playerId, ladder: ladderIdOf(d.ladder) }))
   .handler(async ({ data }) => {
     const db = await requireStaff();
-    const { error } = await db.from("players").delete().eq("id", data.playerId);
+    const { error } = await loose(db).from(ladderTables(data.ladder).players).delete().eq("id", data.playerId);
     if (error) throw new Error("Couldn't remove player");
     return { ok: true };
+  });
+
+export const setSubLadderLocked = createServerFn({ method: "POST" })
+  .inputValidator((d: { locked: boolean }) => ({ locked: d.locked === true }))
+  .handler(async ({ data }) => {
+    const db = await requireStaff();
+    const { error } = await loose(db).from("site_settings")
+      .upsert({ key: "sub_ladder_locked", value: data.locked ? "true" : "false", updated_at: new Date().toISOString() });
+    if (error) throw new Error("Couldn't change the Subtiers lock");
+    return { locked: data.locked };
   });

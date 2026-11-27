@@ -51,9 +51,15 @@ export const SUB_LADDER: LadderConfig = {
   name: "Subtiers Ladder",
   kits: SUB_KITS,
   basePath: "/sub",
-  features: { profiles: false, compare: false, stats: false, tournaments: false, staff: false, rankArrows: false, recentResults: false },
+  features: { profiles: false, compare: false, stats: false, tournaments: false, staff: true, rankArrows: false, recentResults: false },
 };
 
 // The Subtiers ladder is locked (staff only) unless the setting says "false" explicitly.
 // A missing or unreadable setting therefore counts as locked.
 export const isSubLadderLocked = (setting: unknown): boolean => setting !== "false";
+
+// Which database tables belong to a ladder (used by the staff functions).
+export const ladderIdOf = (value: unknown): LadderId => (value === "sub" ? "sub" : "pvp");
+export const ladderKits = (ladder: LadderId): Kit[] => (ladder === "sub" ? SUB_KITS : KITS);
+export const ladderTables = (ladder: LadderId): { players: string; tiers: string } =>
+  ladder === "sub" ? { players: "sub_players", tiers: "sub_player_tiers" } : { players: "players", tiers: "player_tiers" };
