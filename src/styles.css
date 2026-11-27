@@ -99,3 +99,11 @@
 @utility bg-rank-n { background-image: var(--gradient-plain); }
 @utility rank-slant { clip-path: polygon(0 0, 100% 0, 88% 100%, 0 100%); }
 @utility shadow-glow { box-shadow: var(--shadow-glow); }
+
+/* Subtiers ladder theme: accent colour #54b8fc instead of the PvP ladder's gold. */
+.theme-sub {
+  --primary: #54b8fc;
+  --primary-foreground: oklch(0.17 0.02 255);
+  --ring: #54b8fc;
+  --shadow-glow: 0 0 0 1px color-mix(in oklab, #54b8fc 50%, transparent), 0 8px 24px -8px color-mix(in oklab, #54b8fc 60%, transparent);
+}

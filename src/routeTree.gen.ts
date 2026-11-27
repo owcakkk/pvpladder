@@ -16,9 +16,11 @@ import { Route as StatsRouteImport } from './routes/stats'
 import { Route as TournamentsRouteImport } from './routes/tournaments'
 import { Route as PlayersPlayerIdRouteImport } from './routes/players.$playerId'
 import { Route as RankingsKitRouteImport } from './routes/rankings.$kit'
+import { Route as SubIndexRouteImport } from './routes/sub.index'
 import { Route as TournamentsIndexRouteImport } from './routes/tournaments.index'
 import { Route as TournamentsTournamentIdRouteImport } from './routes/tournaments.$tournamentId'
 import { Route as ApiPublicSyncTierRouteImport } from './routes/api/public/sync-tier'
+import { Route as SubRankingsKitRouteImport } from './routes/sub.rankings.$kit'
 import { Route as ApiPublicJobsRefreshMinecraftUsernamesRouteImport } from './routes/api/public/jobs/refresh-minecraft-usernames'
 
 const IndexRoute = IndexRouteImport.update({
@@ -56,6 +58,11 @@ const RankingsKitRoute = RankingsKitRouteImport.update({
   path: '/rankings/$kit',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SubIndexRoute = SubIndexRouteImport.update({
+  id: '/sub/',
+  path: '/sub/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TournamentsIndexRoute = TournamentsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -69,6 +76,11 @@ const TournamentsTournamentIdRoute = TournamentsTournamentIdRouteImport.update({
 const ApiPublicSyncTierRoute = ApiPublicSyncTierRouteImport.update({
   id: '/api/public/sync-tier',
   path: '/api/public/sync-tier',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SubRankingsKitRoute = SubRankingsKitRouteImport.update({
+  id: '/sub/rankings/$kit',
+  path: '/sub/rankings/$kit',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicJobsRefreshMinecraftUsernamesRoute =
@@ -87,8 +99,10 @@ export interface FileRoutesByFullPath {
   '/players/$playerId': typeof PlayersPlayerIdRoute
   '/rankings/$kit': typeof RankingsKitRoute
   '/tournaments/$tournamentId': typeof TournamentsTournamentIdRoute
+  '/sub/': typeof SubIndexRoute
   '/tournaments/': typeof TournamentsIndexRoute
   '/api/public/sync-tier': typeof ApiPublicSyncTierRoute
+  '/sub/rankings/$kit': typeof SubRankingsKitRoute
   '/api/public/jobs/refresh-minecraft-usernames': typeof ApiPublicJobsRefreshMinecraftUsernamesRoute
 }
 export interface FileRoutesByTo {
@@ -99,8 +113,10 @@ export interface FileRoutesByTo {
   '/players/$playerId': typeof PlayersPlayerIdRoute
   '/rankings/$kit': typeof RankingsKitRoute
   '/tournaments/$tournamentId': typeof TournamentsTournamentIdRoute
+  '/sub': typeof SubIndexRoute
   '/tournaments': typeof TournamentsIndexRoute
   '/api/public/sync-tier': typeof ApiPublicSyncTierRoute
+  '/sub/rankings/$kit': typeof SubRankingsKitRoute
   '/api/public/jobs/refresh-minecraft-usernames': typeof ApiPublicJobsRefreshMinecraftUsernamesRoute
 }
 export interface FileRoutesById {
@@ -113,8 +129,10 @@ export interface FileRoutesById {
   '/players/$playerId': typeof PlayersPlayerIdRoute
   '/rankings/$kit': typeof RankingsKitRoute
   '/tournaments/$tournamentId': typeof TournamentsTournamentIdRoute
+  '/sub/': typeof SubIndexRoute
   '/tournaments/': typeof TournamentsIndexRoute
   '/api/public/sync-tier': typeof ApiPublicSyncTierRoute
+  '/sub/rankings/$kit': typeof SubRankingsKitRoute
   '/api/public/jobs/refresh-minecraft-usernames': typeof ApiPublicJobsRefreshMinecraftUsernamesRoute
 }
 export interface FileRouteTypes {
@@ -128,8 +146,10 @@ export interface FileRouteTypes {
     | '/players/$playerId'
     | '/rankings/$kit'
     | '/tournaments/$tournamentId'
+    | '/sub/'
     | '/tournaments/'
     | '/api/public/sync-tier'
+    | '/sub/rankings/$kit'
     | '/api/public/jobs/refresh-minecraft-usernames'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -140,8 +160,10 @@ export interface FileRouteTypes {
     | '/players/$playerId'
     | '/rankings/$kit'
     | '/tournaments/$tournamentId'
+    | '/sub'
     | '/tournaments'
     | '/api/public/sync-tier'
+    | '/sub/rankings/$kit'
     | '/api/public/jobs/refresh-minecraft-usernames'
   id:
     | '__root__'
@@ -153,8 +175,10 @@ export interface FileRouteTypes {
     | '/players/$playerId'
     | '/rankings/$kit'
     | '/tournaments/$tournamentId'
+    | '/sub/'
     | '/tournaments/'
     | '/api/public/sync-tier'
+    | '/sub/rankings/$kit'
     | '/api/public/jobs/refresh-minecraft-usernames'
   fileRoutesById: FileRoutesById
 }
@@ -166,7 +190,9 @@ export interface RootRouteChildren {
   TournamentsRoute: typeof TournamentsRouteWithChildren
   PlayersPlayerIdRoute: typeof PlayersPlayerIdRoute
   RankingsKitRoute: typeof RankingsKitRoute
+  SubIndexRoute: typeof SubIndexRoute
   ApiPublicSyncTierRoute: typeof ApiPublicSyncTierRoute
+  SubRankingsKitRoute: typeof SubRankingsKitRoute
   ApiPublicJobsRefreshMinecraftUsernamesRoute: typeof ApiPublicJobsRefreshMinecraftUsernamesRoute
 }
 
@@ -221,6 +247,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RankingsKitRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/sub/': {
+      id: '/sub/'
+      path: '/sub'
+      fullPath: '/sub/'
+      preLoaderRoute: typeof SubIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/tournaments/': {
       id: '/tournaments/'
       path: '/'
@@ -240,6 +273,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/sync-tier'
       fullPath: '/api/public/sync-tier'
       preLoaderRoute: typeof ApiPublicSyncTierRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sub/rankings/$kit': {
+      id: '/sub/rankings/$kit'
+      path: '/sub/rankings/$kit'
+      fullPath: '/sub/rankings/$kit'
+      preLoaderRoute: typeof SubRankingsKitRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/jobs/refresh-minecraft-usernames': {
@@ -274,7 +314,9 @@ const rootRouteChildren: RootRouteChildren = {
   TournamentsRoute: TournamentsRouteWithChildren,
   PlayersPlayerIdRoute: PlayersPlayerIdRoute,
   RankingsKitRoute: RankingsKitRoute,
+  SubIndexRoute: SubIndexRoute,
   ApiPublicSyncTierRoute: ApiPublicSyncTierRoute,
+  SubRankingsKitRoute: SubRankingsKitRoute,
   ApiPublicJobsRefreshMinecraftUsernamesRoute:
     ApiPublicJobsRefreshMinecraftUsernamesRoute,
 }
