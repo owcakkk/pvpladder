@@ -2,7 +2,7 @@ import { QueryClient } from "@tanstack/react-query";
 import { createRouter } from "@tanstack/react-router";
 import { describe, expect, it } from "vitest";
 import { KITS } from "@/lib/kits";
-import { PVP_LADDER, SUB_KITS, SUB_LADDER } from "@/lib/ladders";
+import { PVP_LADDER, SUB_KITS, SUB_LADDER, isSubLadderLocked } from "@/lib/ladders";
 import { routeTree } from "@/routeTree.gen";
 
 describe("ladder configuration", () => {
@@ -25,5 +25,12 @@ describe("ladder configuration", () => {
     const router = createRouter({ routeTree, context: { queryClient: new QueryClient() } });
     expect(router.matchRoutes("/sub").at(-1)?.routeId).toBe("/sub/");
     expect(router.matchRoutes("/sub/rankings/speed").at(-1)?.params).toMatchObject({ kit: "speed" });
+  });
+  it("keeps Subtiers locked unless the setting says false", () => {
+    expect(isSubLadderLocked(undefined)).toBe(true);
+    expect(isSubLadderLocked(null)).toBe(true);
+    expect(isSubLadderLocked("true")).toBe(true);
+    expect(isSubLadderLocked("anything else")).toBe(true);
+    expect(isSubLadderLocked("false")).toBe(false);
   });
 });
