@@ -8,9 +8,10 @@ import { BonusEditor } from "./BonusEditor";
 import { CategoryEditor, numericCategories } from "./CategoryEditor";
 import { TIERS, LP_RANGES, isLowerTier, tierForLP, validateTierLP, tierBadgeClass, type Kit } from "@/lib/kits";
 import { setTier } from "@/lib/staff.functions";
+import type { LadderId } from "@/lib/ladders";
 
-export function TierEditor({ playerId, kit, tier, lp, bonus, categories, refresh }: {
-  playerId: string; kit: Kit; tier?: string | undefined; lp: number | null; bonus: number; categories?: unknown; refresh: () => Promise<unknown>;
+export function TierEditor({ playerId, kit, tier, lp, bonus, categories, refresh, ladder = "pvp" }: {
+  playerId: string; kit: Kit; tier?: string | undefined; lp: number | null; bonus: number; categories?: unknown; refresh: () => Promise<unknown>; ladder?: LadderId;
 }) {
   // Show the category editor for LT3-LT5 kits: bot-synced ones with numeric categories,
   // and manually added ones that have no categories yet.
@@ -27,7 +28,7 @@ export function TierEditor({ playerId, kit, tier, lp, bonus, categories, refresh
     try {
       const points = lower && value !== "" ? Number(value) : null;
       validateTierLP(selected, points);
-      await save({ data: { playerId, kit: kit.id, tier: selected, tierLP: points } });
+      await save({ data: { playerId, kit: kit.id, tier: selected, tierLP: points, ladder } });
       await refresh(); toast.success("Tier and LP saved");
     } catch (e) { toast.error(e instanceof Error ? e.message : "Couldn't save tier"); }
     finally { setBusy(false); }
@@ -52,8 +53,8 @@ export function TierEditor({ playerId, kit, tier, lp, bonus, categories, refresh
           className="min-w-0 w-20 rounded border bg-background px-2 py-1 text-foreground" />
         <span>{range?.min}–{range?.max} LP</span>
       </label>}
-      {canEditCategories && lower && selected === tier && <CategoryEditor key={JSON.stringify(categories ?? null)} playerId={playerId} kit={kit.id} categories={editableCategories} currentLP={lp} refresh={refresh} />}
-      {!lower && selected && <BonusEditor playerId={playerId} kit={kit.id} bonus={bonus} disabled={!tier || isLowerTier(tier)} refresh={refresh} />}
+      {canEditCategories && lower && selected === tier && <CategoryEditor key={JSON.stringify(categories ?? null)} playerId={playerId} kit={kit.id} categories={editableCategories} currentLP={lp} refresh={refresh} ladder={ladder} />}
+      {!lower && selected && <BonusEditor playerId={playerId} kit={kit.id} bonus={bonus} disabled={!tier || isLowerTier(tier)} refresh={refresh} ladder={ladder} />}
     </div>
   );
 }

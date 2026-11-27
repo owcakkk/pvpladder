@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { KIT_CATEGORIES, tierForLP } from "@/lib/kits";
 import { setCategoryPoints } from "@/lib/staff.functions";
+import type { LadderId } from "@/lib/ladders";
 
 // Returns the categories as numbers, or null when they can't be edited safely.
 export function numericCategories(value: unknown): Record<string, number> | null {
@@ -16,14 +17,14 @@ export function numericCategories(value: unknown): Record<string, number> | null
 
 type Row = { name: string; value: string };
 
-export function CategoryEditor({ playerId, kit, categories, currentLP, refresh }: {
-  playerId: string; kit: string; categories: Record<string, number> | null; currentLP: number | null; refresh: () => Promise<unknown>;
+export function CategoryEditor({ playerId, kit, categories, currentLP, refresh, ladder = "pvp" }: {
+  playerId: string; kit: string; categories: Record<string, number> | null; currentLP: number | null; refresh: () => Promise<unknown>; ladder?: LadderId;
 }) {
   const manual = categories == null;
   const [rows, setRows] = useState<Row[]>(
     categories
       ? Object.entries(categories).map(([name, v]) => ({ name, value: String(v) }))
-      : (KIT_CATEGORIES[kit] ?? []).map((name) => ({ name, value: "0" })),
+      : (ladder === "pvp" ? KIT_CATEGORIES[kit] ?? [] : []).map((name) => ({ name, value: "0" })),
   );
   const [newName, setNewName] = useState("");
   const [busy, setBusy] = useState(false);
@@ -48,7 +49,7 @@ export function CategoryEditor({ playerId, kit, categories, currentLP, refresh }
     if (!valid || total == null || total > 400) return;
     setBusy(true);
     try {
-      await save({ data: { playerId, kit, categories: Object.fromEntries(parsed) } });
+      await save({ data: { playerId, kit, categories: Object.fromEntries(parsed), ladder } });
       await refresh();
       toast.success("Category LP saved");
     } catch (error) { toast.error(error instanceof Error ? error.message : "Couldn't save category LP"); }

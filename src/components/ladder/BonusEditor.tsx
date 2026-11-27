@@ -4,9 +4,10 @@ import { Check } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { setBonusPoints } from "@/lib/staff.functions";
+import type { LadderId } from "@/lib/ladders";
 
-export function BonusEditor({ playerId, kit, bonus, disabled, refresh }: {
-  playerId: string; kit: string; bonus: number; disabled: boolean; refresh: () => Promise<unknown>;
+export function BonusEditor({ playerId, kit, bonus, disabled, refresh, ladder = "pvp" }: {
+  playerId: string; kit: string; bonus: number; disabled: boolean; refresh: () => Promise<unknown>; ladder?: LadderId;
 }) {
   const [value, setValue] = useState(String(bonus));
   const [busy, setBusy] = useState(false);
@@ -31,7 +32,7 @@ export function BonusEditor({ playerId, kit, bonus, disabled, refresh }: {
       </label>
       <Button size="icon" variant="ghost" className="h-7 w-7" title="Save additional LP" aria-label={`${kit} save additional LP`}
         disabled={disabled || busy || value.trim() === "" || !Number.isInteger(Number(value))}
-        onClick={() => run(() => save({ data: { playerId, kit, points: Number(value) } }))}><Check /></Button>
+        onClick={() => run(() => save({ data: { playerId, kit, points: Number(value), ladder } }))}><Check /></Button>
     </div>
   );
 }
