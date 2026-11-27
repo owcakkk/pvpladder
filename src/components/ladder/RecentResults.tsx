@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Clock } from "lucide-react";
@@ -26,13 +27,32 @@ export function RecentResults({ players, kit }: { players: LadderPlayer[]; kit?:
   const { data: rows = [] } = useQuery(recentHistoryQuery);
   const byId = new Map(players.map((p) => [p.id, p]));
   const results = buildRecentResults(rows, new Set(byId.keys()), LIMIT, kit);
+  // No visible scrollbar: the strip scrolls by touch, trackpad, Shift+wheel or by dragging with the mouse.
+  const scroller = useRef<HTMLDivElement>(null);
+  const drag = useRef({ active: false, startX: 0, startLeft: 0, moved: 0 });
   if (results.length === 0) return null;
   return (
     <section aria-label="Recently tested" className="recent-strip mx-auto mt-3 flex max-w-6xl items-center gap-3 rounded-xl border bg-panel px-4 py-2">
       <span className="flex shrink-0 items-center gap-1.5 font-display text-xs font-bold uppercase tracking-wide text-muted-foreground">
         <Clock className="h-3.5 w-3.5 text-primary" /> Recently tested
       </span>
-      <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto pb-1">
+      <div
+        ref={scroller}
+        className="flex min-w-0 flex-1 cursor-grab gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        onPointerDown={(e) => {
+          if (e.pointerType !== "mouse" || !scroller.current) return;
+          drag.current = { active: true, startX: e.clientX, startLeft: scroller.current.scrollLeft, moved: 0 };
+        }}
+        onPointerMove={(e) => {
+          const d = drag.current;
+          if (!d.active || !scroller.current) return;
+          d.moved = Math.max(d.moved, Math.abs(e.clientX - d.startX));
+          scroller.current.scrollLeft = d.startLeft - (e.clientX - d.startX);
+        }}
+        onPointerUp={() => { drag.current.active = false; }}
+        onPointerLeave={() => { drag.current.active = false; }}
+        onClickCapture={(e) => { if (drag.current.moved > 5) { e.preventDefault(); e.stopPropagation(); drag.current.moved = 0; } }}
+      >
         {results.map((r) => {
           const p = byId.get(r.playerId)!;
           const k = ladder.kits.find((x) => x.id === r.kit);
