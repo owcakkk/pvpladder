@@ -2,7 +2,7 @@ import { QueryClient } from "@tanstack/react-query";
 import { createRouter } from "@tanstack/react-router";
 import { describe, expect, it } from "vitest";
 import { KITS } from "@/lib/kits";
-import { PVP_LADDER, SUB_KITS, SUB_LADDER, isSubLadderLocked } from "@/lib/ladders";
+import { PVP_LADDER, SUB_KITS, SUB_LADDER, isSubLadderLocked, ladderIdOf, ladderKits, ladderTables } from "@/lib/ladders";
 import { routeTree } from "@/routeTree.gen";
 
 describe("ladder configuration", () => {
@@ -32,5 +32,14 @@ describe("ladder configuration", () => {
     expect(isSubLadderLocked("true")).toBe(true);
     expect(isSubLadderLocked("anything else")).toBe(true);
     expect(isSubLadderLocked("false")).toBe(false);
+  });
+  it("maps each ladder to its own kits and database tables", () => {
+    expect(ladderIdOf("sub")).toBe("sub");
+    expect(ladderIdOf(undefined)).toBe("pvp");
+    expect(ladderIdOf("anything")).toBe("pvp");
+    expect(ladderKits("sub")).toBe(SUB_KITS);
+    expect(ladderKits("pvp")).toBe(KITS);
+    expect(ladderTables("pvp")).toEqual({ players: "players", tiers: "player_tiers" });
+    expect(ladderTables("sub")).toEqual({ players: "sub_players", tiers: "sub_player_tiers" });
   });
 });
