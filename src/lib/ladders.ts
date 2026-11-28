@@ -30,7 +30,7 @@ export const SUB_KITS: Kit[] = [
   { id: "bow", name: "Bow", icon: Target, tone: "text-region-na" },
   { id: "ogv", name: "OGV", icon: Swords, tone: "text-silver" },
   { id: "creeper", name: "Creeper", icon: Bomb, tone: "text-region-eu" },
-  { id: "diavanilla", name: "Diamond Vanilla", icon: Diamond, tone: "text-primary" },
+  { id: "diamondvanilla", name: "Diamond Vanilla", icon: Diamond, tone: "text-primary" },
   { id: "trident", name: "Trident", icon: Anchor, tone: "text-region-as" },
   { id: "manhunt", name: "Manhunt", icon: Crosshair, tone: "text-destructive" },
   { id: "debuff", name: "Debuff", icon: FlaskConical, tone: "text-bronze" },

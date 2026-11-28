@@ -3,6 +3,7 @@ import { SYNC_WINDOW_MS, SyncPayloadError, syncPlayers } from "./tier-sync";
 import type { Json } from "@/integrations/supabase/types";
 import { lookupMcPlayer } from "./mc-lookup.server";
 import { recordTierHistory } from "./tier-history.server";
+import { ladderKits, ladderTables, type LadderId } from "./ladders";
 
 export function verifySyncSignature(raw: string, timestamp: string | null, signature: string | null, secret: string, now = Date.now()) {
   if (!timestamp || !/^\d{1,16}$/.test(timestamp) || !signature || !/^[a-fA-F0-9]{64}$/.test(signature)) return false;
@@ -12,7 +13,8 @@ export function verifySyncSignature(raw: string, timestamp: string | null, signa
   return timingSafeEqual(expected, Buffer.from(signature, "hex"));
 }
 
-export async function handleTierSync(request: Request, secret: string | undefined) {
+// One handler for both ladders: PvP bot -> /api/public/sync-tier, Subtiers bot -> /api/public/sync-subtier.
+export async function handleTierSync(request: Request, secret: string | undefined, ladder: LadderId = "pvp") {
   if (!secret) return Response.json({ error: "Tier sync is not configured" }, { status: 503 });
   if (Number(request.headers.get("content-length") ?? 0) > 1048576) return Response.json({ error: "Payload too large" }, { status: 413 });
   const raw = await request.text();
@@ -21,7 +23,7 @@ export async function handleTierSync(request: Request, secret: string | undefine
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
   let players;
-  try { players = syncPlayers(JSON.parse(raw)); }
+  try { players = syncPlayers(JSON.parse(raw), Date.now(), ladderKits(ladder)); }
   catch (error) {
     const field = error instanceof SyncPayloadError ? error.field : "body";
     return Response.json({ error: "Invalid tier payload", field }, { status: 400 });
@@ -29,8 +31,11 @@ export async function handleTierSync(request: Request, secret: string | undefine
   if (players.length === 0) return Response.json({ ok: true });
   try {
     const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
-    const { data: existing, error: readError } = await db.from("players").select("username, mc_uuid");
+    const tables = ladderTables(ladder);
+    const looseDb = db as unknown as { from: (table: string) => any; rpc: (fn: string, args: unknown) => Promise<{ error: unknown }> };
+    const { data: existingRows, error: readError } = await looseDb.from(tables.players).select("username, mc_uuid");
     if (readError) throw new Error("Read failed");
+    const existing = (existingRows ?? []) as Array<{ username: string; mc_uuid: string | null }>;
     const resolved = new Map<string, string | null>();
     for (const player of players) {
       const row = existing?.find((entry) => entry.username.toLowerCase() === player.username.toLowerCase());
@@ -56,7 +61,7 @@ export async function handleTierSync(request: Request, secret: string | undefine
       return Response.json({ error: "Minecraft player not found", usernames: notFound }, { status: 422 });
     }
     const payload = players.map((player) => ({ ...player, username: canonical.get(player.username.toLowerCase()) ?? player.username, uuid: resolved.get(player.username.toLowerCase()) ?? null }));
-    const { error } = await db.rpc("apply_discord_tier_sync", { payload: payload as unknown as Json });
+    const { error } = await looseDb.rpc(ladder === "sub" ? "apply_sub_tier_sync" : "apply_discord_tier_sync", { payload: payload as unknown as Json });
     if (error) throw new Error("Tier write failed");
     // The database function matches a renamed player by UUID but keeps the old
     // name, so apply the new name here (same identity, same rows, only the name).
@@ -68,14 +73,15 @@ export async function handleTierSync(request: Request, secret: string | undefine
       const row = existing?.find((entry) => normalize(entry.mc_uuid) === uuid && entry.username !== player.username);
       if (!row?.mc_uuid) continue;
       try {
-        for (const table of ["players", "tournament_players"] as const) {
-          const { error: renameError } = await db.from(table).update({ username: player.username }).eq("mc_uuid", row.mc_uuid);
+        for (const table of ladder === "sub" ? [tables.players] : [tables.players, "tournament_players"]) {
+          const { error: renameError } = await looseDb.from(table).update({ username: player.username }).eq("mc_uuid", row.mc_uuid);
           if (renameError) console.warn(`Tier sync: couldn't rename ${row.username} in ${table}`, renameError.code);
         }
       } catch (renameFailure) { console.warn("Tier sync: rename failed", renameFailure); }
     }
     // Keep a history of every synced result for the Tier Journey chart (never fails the sync).
-    try {
+    // Subtiers has no history table yet.
+    if (ladder === "pvp") try {
       const { data: fresh } = await db.from("players").select("id, username");
       const idByName = new Map((fresh ?? []).map((row) => [row.username.toLowerCase(), row.id]));
       const wanted = new Set<string>();
